@@ -1,0 +1,62 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String     @id @default(cuid())
+  supabaseId String     @unique
+  email      String     @unique
+  fullName   String?
+  avatarUrl  String?
+  isPro      Boolean    @default(false)
+  proSince   DateTime?
+  documents  Document[]
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+}
+
+model Document {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  filename   String
+  fileUrl    String
+  fileType   String
+  fileSize   Int?
+  pageCount  Int?
+  chunkCount Int?
+  pineconeNs String
+  status     String   @default("processing")
+  chats      Chat[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Chat {
+  id         String    @id @default(cuid())
+  documentId String
+  document   Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  messages   Message[]
+  createdAt  DateTime  @default(now())
+
+  @@index([documentId])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  chatId    String
+  chat      Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  role      String
+  content   String
+  sources   Json?
+  createdAt DateTime @default(now())
+
+  @@index([chatId])
+}

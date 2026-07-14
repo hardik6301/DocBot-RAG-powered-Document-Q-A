@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.material-symbols-outlined {
+  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+  display: inline-block;
+  vertical-align: middle;
+  user-select: none;
+  line-height: 1;
+}
+
+:root {
+  --background: #faf8ff;
+  --on-background: #131b2e;
+  --primary: #004ac6;
+  --primary-container: #2563eb;
+}
+
+html {
+  background-color: #faf8ff;
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #faf8ff;
+  color: #131b2e;
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: #dbe1ff;
+  color: #00174b;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #c3c6d7;
+  border-radius: 10px;
+}
+
+@layer utilities {
+  .glass-card {
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(195, 198, 215, 0.55);
+  }
+
+  .upload-dashed {
+    background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' stroke='%23C3C6D7' stroke-width='2' stroke-dasharray='8%2c 12' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e");
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
