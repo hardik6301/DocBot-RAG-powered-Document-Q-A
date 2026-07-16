@@ -6,6 +6,7 @@ import Navbar from "@/components/layout/Navbar";
 import Icon from "@/components/ui/Icon";
 import SourceCard from "@/components/chat/SourceCard";
 import ChatInput from "@/components/chat/ChatInput";
+import ExportChatButton from "@/components/chat/ExportChatButton";
 import type { AppDocument, SourceCitation, StoredMessage } from "@/types";
 
 type UiMessage = StoredMessage & { typing?: boolean };
@@ -176,19 +177,26 @@ export default function ChatPage({ params }: { params: { docId: string } }) {
         </aside>
 
         <section className="relative flex flex-1 flex-col bg-surface">
-          <div className="z-10 flex items-center justify-between border-b border-outline-variant bg-white/80 px-stack-lg py-3 backdrop-blur-md">
+          <div className="z-10 flex items-center justify-between gap-3 border-b border-outline-variant bg-white/80 px-stack-lg py-3 backdrop-blur-md">
             <div className="flex items-center gap-stack-sm">
               <div className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
               <span className="text-body-sm font-medium text-on-surface">
                 AI Analyst Online
               </span>
             </div>
-            <Link
-              href="/dashboard"
-              className="text-body-sm font-medium text-primary md:hidden"
-            >
-              Dashboard
-            </Link>
+            <div className="flex items-center gap-2">
+              <ExportChatButton
+                messages={messages}
+                title={title}
+                disabled={loading || !!loadError}
+              />
+              <Link
+                href="/dashboard"
+                className="text-body-sm font-medium text-primary md:hidden"
+              >
+                Dashboard
+              </Link>
+            </div>
           </div>
 
           <div className="flex-1 space-y-stack-lg overflow-y-auto px-4 pb-48 pt-stack-lg md:px-stack-lg">
