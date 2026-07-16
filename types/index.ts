@@ -30,6 +30,23 @@ export type SourceCitation = {
   filename: string;
 };
 
+export type StoredMessage = {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  sources?: SourceCitation[] | null;
+  createdAt: string;
+};
+
+export type StoredChat = {
+  id: string;
+  documentId: string;
+  userId: string;
+  messages: StoredMessage[];
+  createdAt: string;
+  updatedAt: string;
+};
+
 export const LOCAL_DEV_USER: AppUser = {
   id: "local-user",
   supabaseId: "local-dev",

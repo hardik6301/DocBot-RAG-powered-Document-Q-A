@@ -1,11 +1,42 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { getDocument } from "@/lib/documents/store";
-import { embedQuery, generateGroundedAnswer, isGeminiConfigured } from "@/lib/gemini";
+import {
+  appendMessages,
+  listMessages,
+} from "@/lib/chat/store";
+import {
+  embedQuery,
+  generateGroundedAnswer,
+  isGeminiConfigured,
+} from "@/lib/gemini";
 import { isPineconeConfigured, querySimilar } from "@/lib/pinecone";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
+
+export async function GET(request: Request) {
+  const user = await requireUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const documentId = new URL(request.url).searchParams.get("documentId");
+  if (!documentId) {
+    return NextResponse.json(
+      { error: "documentId is required" },
+      { status: 400 },
+    );
+  }
+
+  const doc = await getDocument(documentId, user.id);
+  if (!doc) {
+    return NextResponse.json({ error: "Document not found" }, { status: 404 });
+  }
+
+  const messages = await listMessages(documentId, user.id);
+  return NextResponse.json({ messages, document: doc });
+}
 
 export async function POST(request: Request) {
   const user = await requireUser();
@@ -59,34 +90,40 @@ export async function POST(request: Request) {
     const question = body.question.trim();
     const vector = await embedQuery(question);
     const matches = await querySimilar(user.id, vector, 5, doc.id);
-
     const usable = matches.filter((m) => m.chunkText && m.score > 0.15);
 
+    let answer: string;
+    let sources: {
+      chunkText: string;
+      page: number | null;
+      filename: string;
+    }[] = [];
+
     if (usable.length === 0) {
-      return NextResponse.json({
-        answer:
-          "I could not find relevant information in this document for that question.",
-        sources: [],
-      });
-    }
-
-    const answer = await generateGroundedAnswer(
-      question,
-      usable.map((m) => ({
-        text: m.chunkText,
-        page: m.page,
-        filename: m.filename || doc.filename,
-      })),
-    );
-
-    return NextResponse.json({
-      answer,
-      sources: usable.map((m) => ({
+      answer =
+        "I could not find relevant information in this document for that question.";
+    } else {
+      sources = usable.map((m) => ({
         chunkText: m.chunkText,
         page: m.page,
         filename: m.filename || doc.filename,
-      })),
-    });
+      }));
+      answer = await generateGroundedAnswer(
+        question,
+        sources.map((s) => ({
+          text: s.chunkText,
+          page: s.page,
+          filename: s.filename,
+        })),
+      );
+    }
+
+    await appendMessages(doc.id, user.id, [
+      { role: "user", content: question, sources: null },
+      { role: "assistant", content: answer, sources },
+    ]);
+
+    return NextResponse.json({ answer, sources });
   } catch (e) {
     console.error("chat failed", e);
     return NextResponse.json(
