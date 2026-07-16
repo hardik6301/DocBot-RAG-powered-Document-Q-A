@@ -1,5 +1,21 @@
 # DocBot — Memory
 
+## 2026-07-16 — Phase 7 Pro features (local demo)
+
+### Shipped (uncommitted — user commits in splits)
+- `isPro` via `.data/settings.json` + `POST /api/settings` demo toggle
+- Unlimited uploads when Pro; dashboard Upgrade / Switch to Free
+- Multi-doc Q&A: `/api/chat/multi` + `/chat/multi` (Pro-gated)
+- Chat PDF export (`jspdf` + `ExportChatButton`)
+- Analytics: `/api/analytics` + `/analytics` (Pro-gated)
+- Navbar: Multi-doc + Analytics; priority ingest badge on Pro dashboard
+
+### Still deferred
+- Stripe billing
+- Supabase Auth/Storage + durable chat on Vercel
+
+---
+
 ## 2026-07-16 — Phase 6 deploy prep
 
 ### Confirmed

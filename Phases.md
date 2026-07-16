@@ -152,12 +152,12 @@ Build in order. Do not start a phase until the previous phase’s exit criteria 
 
 Only after MVP is stable:
 
-1. Unlimited uploads / `isPro` gating  
-2. Multi-document Q&A  
-3. Export chat history as PDF  
-4. Priority processing  
-5. Analytics (top questions, insights)  
-6. Stripe billing (optional)
+1. [x] Unlimited uploads / `isPro` gating (local demo toggle via `/api/settings`)  
+2. [x] Multi-document Q&A (`/chat/multi`)  
+3. [x] Export chat history as PDF  
+4. [x] Priority processing (Pro badge / label; Stripe later)  
+5. [x] Analytics (top questions, insights)  
+6. [ ] Stripe billing (optional)
 
 ---
 
