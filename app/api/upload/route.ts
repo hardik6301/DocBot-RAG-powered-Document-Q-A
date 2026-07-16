@@ -8,9 +8,8 @@ import {
   isAllowedFile,
   updateDocument,
 } from "@/lib/documents/store";
-import { saveLocalFile } from "@/lib/storage/local";
+import { deleteUploadFile, saveUploadFile } from "@/lib/storage/files";
 import { ingestDocument } from "@/lib/ingest";
-import { deleteLocalFile } from "@/lib/storage/local";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -58,7 +57,7 @@ export async function POST(request: Request) {
   let fileUrl: string | null = null;
 
   try {
-    const saved = await saveLocalFile(user.id, file);
+    const saved = await saveUploadFile(user.id, file);
     fileUrl = saved.fileUrl;
     const fileType = detectFileType(file.name);
 
@@ -97,7 +96,7 @@ export async function POST(request: Request) {
     if (docId) {
       await updateDocument(docId, user.id, { status: "failed" });
     } else if (fileUrl) {
-      await deleteLocalFile(fileUrl);
+      await deleteUploadFile(fileUrl);
     }
 
     return NextResponse.json(

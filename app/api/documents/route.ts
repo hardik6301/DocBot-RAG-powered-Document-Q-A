@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
-import { FREE_TIER_LIMIT } from "@/lib/config";
+import {
+  FREE_TIER_LIMIT,
+  isLocalDevMode,
+  isStorageConfigured,
+  useDurableDb,
+} from "@/lib/config";
 import { listDocuments, countDocuments } from "@/lib/documents/store";
 
 export const runtime = "nodejs";
@@ -21,6 +26,8 @@ export async function GET() {
       limit: user.isPro ? null : FREE_TIER_LIMIT,
     },
     isPro: user.isPro,
-    localMode: true,
+    localMode: isLocalDevMode(),
+    durableDb: useDurableDb(),
+    storage: isStorageConfigured() ? "supabase" : "local",
   });
 }

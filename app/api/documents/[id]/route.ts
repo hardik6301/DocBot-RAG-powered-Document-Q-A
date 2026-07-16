@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { deleteDocument, getDocument } from "@/lib/documents/store";
 import { deleteChatsForDocument } from "@/lib/chat/store";
-import { deleteLocalFile } from "@/lib/storage/local";
+import { deleteUploadFile } from "@/lib/storage/files";
 import { deleteDocVectors } from "@/lib/pinecone";
 
 export const runtime = "nodejs";
@@ -33,7 +33,7 @@ export async function DELETE(_req: Request, { params }: Ctx) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  await deleteLocalFile(removed.fileUrl);
+  await deleteUploadFile(removed.fileUrl);
   await deleteDocVectors(removed.pineconeNs || user.id, removed.id);
   await deleteChatsForDocument(removed.id);
 
