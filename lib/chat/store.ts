@@ -2,29 +2,29 @@ import { promises as fs } from "fs";
 import path from "path";
 import { randomUUID } from "crypto";
 import type { SourceCitation, StoredChat, StoredMessage } from "@/types";
+import { dataDir } from "@/lib/paths";
 
-const DATA_DIR = path.join(process.cwd(), ".data");
-const DATA_FILE = path.join(DATA_DIR, "chats.json");
+const DATA_FILE = () => path.join(dataDir(), "chats.json");
 
 type StoreShape = {
   chats: StoredChat[];
 };
 
 async function ensureStore(): Promise<StoreShape> {
-  await fs.mkdir(DATA_DIR, { recursive: true });
+  await fs.mkdir(dataDir(), { recursive: true });
   try {
-    const raw = await fs.readFile(DATA_FILE, "utf8");
+    const raw = await fs.readFile(DATA_FILE(), "utf8");
     return JSON.parse(raw) as StoreShape;
   } catch {
     const empty: StoreShape = { chats: [] };
-    await fs.writeFile(DATA_FILE, JSON.stringify(empty, null, 2));
+    await fs.writeFile(DATA_FILE(), JSON.stringify(empty, null, 2));
     return empty;
   }
 }
 
 async function writeStore(store: StoreShape) {
-  await fs.mkdir(DATA_DIR, { recursive: true });
-  await fs.writeFile(DATA_FILE, JSON.stringify(store, null, 2));
+  await fs.mkdir(dataDir(), { recursive: true });
+  await fs.writeFile(DATA_FILE(), JSON.stringify(store, null, 2));
 }
 
 export async function getOrCreateChat(

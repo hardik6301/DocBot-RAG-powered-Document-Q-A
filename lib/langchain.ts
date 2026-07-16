@@ -1,6 +1,6 @@
 import { promises as fs } from "fs";
-import path from "path";
 import JSZip from "jszip";
+import { resolveUploadPath } from "@/lib/storage/local";
 
 export type LoadedPage = {
   page: number;
@@ -146,6 +146,5 @@ export function splitPages(
 }
 
 export function absoluteUploadPath(fileUrl: string) {
-  // fileUrl like /uploads/user/file.pdf
-  return path.join(process.cwd(), "public", fileUrl.replace(/^\//, ""));
+  return resolveUploadPath(fileUrl);
 }
