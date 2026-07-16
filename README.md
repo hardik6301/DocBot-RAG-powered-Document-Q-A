@@ -36,7 +36,16 @@ See `.env.example`:
 
 - `GEMINI_API_KEY` — required for ingest + chat  
 - `PINECONE_API_KEY` / `PINECONE_INDEX` — required for vectors  
+- `STRIPE_SECRET_KEY` / `STRIPE_PRICE_ID` / `STRIPE_WEBHOOK_SECRET` — optional Pro billing  
 - Supabase / Neon — optional until you wire auth & Postgres  
+
+### Stripe Pro (optional)
+
+1. Create a [Stripe](https://dashboard.stripe.com) product + recurring Price  
+2. Put `STRIPE_SECRET_KEY` + `STRIPE_PRICE_ID` in `.env.local`  
+3. For webhooks (production): point to `/api/stripe/webhook` and set `STRIPE_WEBHOOK_SECRET`  
+4. Locally, success page calls `/api/stripe/confirm` so Pro activates without a webhook  
+5. Without Stripe keys, dashboard **Unlock Pro (demo)** still works
 
 ## RAG flow
 
@@ -64,6 +73,9 @@ Repo: https://github.com/hardik6301/DocBot-RAG-powered-Document-Q-A
 | `PINECONE_API_KEY` | Yes |
 | `PINECONE_INDEX` | Yes (`docbot`) |
 | `NEXT_PUBLIC_APP_URL` | Yes (set after first deploy to your `*.vercel.app` URL) |
+| `STRIPE_SECRET_KEY` | Optional (Pro Checkout) |
+| `STRIPE_PRICE_ID` | Optional |
+| `STRIPE_WEBHOOK_SECRET` | Optional (recommended in production) |
 
 4. Deploy → open the URL → `/dashboard` → upload a PDF → chat  
 
@@ -75,5 +87,5 @@ Repo: https://github.com/hardik6301/DocBot-RAG-powered-Document-Q-A
 
 ## Status
 
-- Phases 0–4: UI + local docs + RAG ingest/chat + history  
-- Deferred: Supabase Auth/Storage, Neon Prisma, Vercel production smoke test  
+- Phases 0–7: UI + RAG + Pro features + optional Stripe Checkout  
+- Deferred: Supabase Auth/Storage, Neon Prisma, multi-tenant billing store

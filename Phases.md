@@ -157,7 +157,7 @@ Only after MVP is stable:
 3. [x] Export chat history as PDF  
 4. [x] Priority processing (Pro badge / label; Stripe later)  
 5. [x] Analytics (top questions, insights)  
-6. [ ] Stripe billing (optional)
+6. [x] Stripe billing (optional Checkout + webhook + portal; demo toggle fallback)
 
 ---
 

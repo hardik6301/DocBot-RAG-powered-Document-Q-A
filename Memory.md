@@ -11,8 +11,21 @@
 - Navbar: Multi-doc + Analytics; priority ingest badge on Pro dashboard
 
 ### Still deferred
-- Stripe billing
 - Supabase Auth/Storage + durable chat on Vercel
+
+---
+
+## 2026-07-16 — Stripe billing
+
+### Shipped (uncommitted — user commits in splits)
+- `stripe` SDK + `lib/stripe.ts`
+- Checkout `/api/stripe/checkout`, confirm `/api/stripe/confirm`, webhook, portal
+- `/billing/success` + `/billing/cancel`
+- Pricing + dashboard wired via `UpgradeButton` / `ManageBillingButton`
+- Demo Pro toggle remains when Stripe env unset
+
+### Still deferred
+- Supabase Auth/Storage + durable multi-user billing store
 
 ---
 
