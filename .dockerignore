@@ -1,0 +1,29 @@
+# dependencies & build
+node_modules
+.next
+out
+build
+coverage
+
+# git / editor
+.git
+.github
+.cursor
+.vscode
+*.md
+!README.md
+
+# env & secrets
+.env
+.env.*
+!.env.example
+
+# local runtime data
+.data
+public/uploads
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
+.vercel
