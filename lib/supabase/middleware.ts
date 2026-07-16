@@ -42,7 +42,10 @@ export async function updateSession(request: NextRequest) {
 
   const path = request.nextUrl.pathname;
   const isProtected =
-    path.startsWith("/dashboard") || path.startsWith("/chat");
+    path.startsWith("/dashboard") ||
+    path.startsWith("/chat") ||
+    path.startsWith("/analytics") ||
+    path.startsWith("/billing");
   const isAuthPage = path.startsWith("/auth/login");
 
   if (isProtected && !user) {

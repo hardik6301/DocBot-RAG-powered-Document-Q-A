@@ -3,13 +3,13 @@ import { LOCAL_DEV_USER, type AppUser } from "@/types";
 
 /**
  * Resolve current app user.
- * Local mode (no Supabase): returns a fixed dev user so the product can be built end-to-end.
- * When Supabase is configured later, this swaps to real session + Prisma upsert.
+ * Local mode (no Supabase): fixed dev user + local settings.json isPro.
+ * Supabase + Neon: session user upserted in Prisma.
  */
 export async function requireUser(): Promise<AppUser | null> {
   if (!isSupabaseConfigured()) {
-    const { getSettings } = await import("@/lib/settings");
-    const settings = await getSettings();
+    const { getLocalSettings } = await import("@/lib/settings");
+    const settings = await getLocalSettings();
     return { ...LOCAL_DEV_USER, isPro: settings.isPro };
   }
 
@@ -23,6 +23,8 @@ export async function requireUser(): Promise<AppUser | null> {
     if (!authUser?.email) return null;
 
     if (!isDatabaseConfigured()) {
+      const { getLocalSettings } = await import("@/lib/settings");
+      const settings = await getLocalSettings();
       return {
         id: authUser.id,
         supabaseId: authUser.id,
@@ -33,7 +35,7 @@ export async function requireUser(): Promise<AppUser | null> {
           null,
         avatarUrl:
           (authUser.user_metadata?.avatar_url as string | undefined) ?? null,
-        isPro: false,
+        isPro: settings.isPro,
       };
     }
 
@@ -72,7 +74,7 @@ export async function requireUser(): Promise<AppUser | null> {
     };
   } catch (e) {
     console.error("requireUser failed", e);
-    return LOCAL_DEV_USER;
+    return null;
   }
 }
 

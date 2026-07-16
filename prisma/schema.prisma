@@ -8,16 +8,19 @@ datasource db {
 }
 
 model User {
-  id         String     @id @default(cuid())
-  supabaseId String     @unique
-  email      String     @unique
-  fullName   String?
-  avatarUrl  String?
-  isPro      Boolean    @default(false)
-  proSince   DateTime?
-  documents  Document[]
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
+  id                   String     @id @default(cuid())
+  supabaseId           String     @unique
+  email                String     @unique
+  fullName             String?
+  avatarUrl            String?
+  isPro                Boolean    @default(false)
+  proSince             DateTime?
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  documents            Document[]
+  chats                Chat[]
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime   @updatedAt
 }
 
 model Document {
@@ -41,11 +44,18 @@ model Document {
 
 model Chat {
   id         String    @id @default(cuid())
-  documentId String
-  document   Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Null for multi-document Pro chats (`kind` = "multi").
+  documentId String?
+  document   Document? @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  /// "document" | "multi"
+  kind       String    @default("document")
   messages   Message[]
   createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
+  @@index([userId, kind])
   @@index([documentId])
 }
 
