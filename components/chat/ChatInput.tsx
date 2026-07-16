@@ -12,12 +12,14 @@ const prompts = [
 
 type ChatInputProps = {
   onSend?: (text: string) => void;
+  disabled?: boolean;
 };
 
-export default function ChatInput({ onSend }: ChatInputProps) {
+export default function ChatInput({ onSend, disabled }: ChatInputProps) {
   const [value, setValue] = useState("");
 
   const submit = () => {
+    if (disabled) return;
     const text = value.trim();
     if (!text) return;
     onSend?.(text);
@@ -32,8 +34,9 @@ export default function ChatInput({ onSend }: ChatInputProps) {
             <button
               key={p.label}
               type="button"
+              disabled={disabled}
               onClick={() => setValue(p.label)}
-              className="flex shrink-0 items-center gap-2 rounded-full border border-outline-variant bg-surface-container px-4 py-1.5 text-body-sm text-on-surface-variant transition-all hover:border-primary hover:bg-primary-fixed"
+              className="flex shrink-0 items-center gap-2 rounded-full border border-outline-variant bg-surface-container px-4 py-1.5 text-body-sm text-on-surface-variant transition-all hover:border-primary hover:bg-primary-fixed disabled:opacity-50"
             >
               <Icon name={p.icon} className="text-[18px]" />
               {p.label}
@@ -54,8 +57,9 @@ export default function ChatInput({ onSend }: ChatInputProps) {
                 }
               }}
               rows={1}
+              disabled={disabled}
               placeholder="Ask anything about this document..."
-              className="max-h-32 min-h-[52px] flex-1 resize-none border-none bg-transparent px-3 py-3 text-body-md outline-none focus:ring-0"
+              className="max-h-32 min-h-[52px] flex-1 resize-none border-none bg-transparent px-3 py-3 text-body-md outline-none focus:ring-0 disabled:opacity-50"
             />
             <div className="flex items-center gap-2 p-2">
               <button
@@ -68,7 +72,8 @@ export default function ChatInput({ onSend }: ChatInputProps) {
               <button
                 type="button"
                 onClick={submit}
-                className="flex items-center justify-center rounded-xl bg-primary p-2 text-white transition-all hover:bg-surface-tint active:scale-95"
+                disabled={disabled}
+                className="flex items-center justify-center rounded-xl bg-primary p-2 text-white transition-all hover:bg-surface-tint active:scale-95 disabled:opacity-50"
                 aria-label="Send"
               >
                 <Icon name="arrow_upward" />

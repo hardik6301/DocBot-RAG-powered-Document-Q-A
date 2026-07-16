@@ -100,4 +100,12 @@ export async function deleteChatsForDocument(documentId: string) {
   await writeStore(store);
 }
 
+export async function listChatsForUser(userId: string): Promise<StoredChat[]> {
+  const store = await ensureStore();
+  return store.chats.filter((c) => c.userId === userId);
+}
+
+/** Special documentId for cross-document Pro chat sessions. */
+export const MULTI_DOC_CHAT_ID = "__multi__";
+
 export type { SourceCitation };

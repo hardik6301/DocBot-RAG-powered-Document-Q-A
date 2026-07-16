@@ -13,8 +13,8 @@ type NavbarProps = {
 
 const links = [
   { href: "/dashboard", label: "Dashboard" },
-  { href: "#", label: "History" },
-  { href: "#", label: "Resources" },
+  { href: "/chat/multi", label: "Multi-doc" },
+  { href: "/analytics", label: "Analytics" },
 ];
 
 export default function Navbar({ variant = "marketing" }: NavbarProps) {

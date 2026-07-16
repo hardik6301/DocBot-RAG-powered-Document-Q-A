@@ -97,15 +97,22 @@ export async function querySimilar(
   namespace: string,
   vector: number[],
   topK = 5,
-  docId?: string,
+  docId?: string | string[],
 ) {
   const index = await ensureIndex();
+  let filter: Record<string, unknown> | undefined;
+  if (typeof docId === "string") {
+    filter = { docId: { $eq: docId } };
+  } else if (Array.isArray(docId) && docId.length > 0) {
+    filter = { docId: { $in: docId } };
+  }
+
   const result = await index.query({
     namespace,
     vector,
     topK,
     includeMetadata: true,
-    filter: docId ? { docId: { $eq: docId } } : undefined,
+    filter,
   });
 
   return (result.matches ?? []).map((m) => ({
