@@ -58,6 +58,7 @@ export async function POST(request: Request) {
     const settings = await activateProFromStripe({
       customerId,
       subscriptionId,
+      userId: user.id,
     });
 
     return NextResponse.json({ ok: true, settings });

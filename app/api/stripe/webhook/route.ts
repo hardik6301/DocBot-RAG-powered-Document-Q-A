@@ -53,30 +53,43 @@ export async function POST(request: Request) {
             typeof session.subscription === "string"
               ? session.subscription
               : session.subscription?.id ?? null;
-          await activateProFromStripe({ customerId, subscriptionId });
+          await activateProFromStripe({
+            customerId,
+            subscriptionId,
+            userId: session.metadata?.userId ?? session.client_reference_id,
+          });
         }
         break;
       }
       case "customer.subscription.deleted": {
-        await deactivateProFromStripe();
+        const sub = event.data.object as Stripe.Subscription;
+        const customerId =
+          typeof sub.customer === "string" ? sub.customer : sub.customer.id;
+        await deactivateProFromStripe({
+          customerId,
+          userId: sub.metadata?.userId,
+        });
         break;
       }
       case "customer.subscription.updated": {
         const sub = event.data.object as Stripe.Subscription;
+        const customerId =
+          typeof sub.customer === "string" ? sub.customer : sub.customer.id;
         if (sub.status === "active" || sub.status === "trialing") {
           await activateProFromStripe({
-            customerId:
-              typeof sub.customer === "string"
-                ? sub.customer
-                : sub.customer.id,
+            customerId,
             subscriptionId: sub.id,
+            userId: sub.metadata?.userId,
           });
         } else if (
           sub.status === "canceled" ||
           sub.status === "unpaid" ||
           sub.status === "incomplete_expired"
         ) {
-          await deactivateProFromStripe();
+          await deactivateProFromStripe({
+            customerId,
+            userId: sub.metadata?.userId,
+          });
         }
         break;
       }

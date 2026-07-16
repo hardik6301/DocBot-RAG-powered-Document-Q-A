@@ -18,7 +18,7 @@ export async function POST() {
     );
   }
 
-  const settings = await getSettings();
+  const settings = await getSettings(user.id);
   if (!settings.stripeCustomerId) {
     return NextResponse.json(
       { error: "No Stripe customer on file. Upgrade first." },

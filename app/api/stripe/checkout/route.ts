@@ -40,7 +40,7 @@ export async function POST() {
 
   try {
     const stripe = getStripe();
-    const settings = await getSettings();
+    const settings = await getSettings(user.id);
     const base = appBaseUrl();
 
     const session = await stripe.checkout.sessions.create({

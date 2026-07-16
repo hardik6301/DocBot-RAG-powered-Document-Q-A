@@ -9,14 +9,14 @@ export async function GET() {
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const settings = await getSettings();
+  const settings = await getSettings(user.id);
   return NextResponse.json({
     isPro: settings.isPro || user.isPro,
     proSince: settings.proSince,
   });
 }
 
-/** Demo toggle — replace with Stripe webhook later. */
+/** Demo toggle — Stripe Checkout preferred when configured. */
 export async function POST(request: Request) {
   const user = await requireUser();
   if (!user) {
@@ -31,6 +31,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "isPro boolean required" }, { status: 400 });
   }
 
-  const settings = await setPro(body.isPro);
+  const settings = await setPro(body.isPro, user.id);
   return NextResponse.json(settings);
 }

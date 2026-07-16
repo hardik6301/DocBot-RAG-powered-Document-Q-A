@@ -3,6 +3,7 @@ import path from "path";
 import { randomUUID } from "crypto";
 import type { AppDocument, DocStatus } from "@/types";
 import { dataDir, isVercelRuntime } from "@/lib/paths";
+import { useDurableDb } from "@/lib/config";
 import { isPineconeConfigured } from "@/lib/pinecone";
 import {
   pineconeDeleteDocument,
@@ -10,6 +11,14 @@ import {
   pineconeListDocuments,
   pineconeUpsertDocument,
 } from "@/lib/documents/pinecone-meta";
+import {
+  dbCountDocuments,
+  dbCreateDocument,
+  dbDeleteDocument,
+  dbGetDocument,
+  dbListDocuments,
+  dbUpdateDocument,
+} from "@/lib/documents/prisma-store";
 
 const DATA_FILE = () => path.join(dataDir(), "documents.json");
 
@@ -35,10 +44,16 @@ async function writeStore(store: StoreShape) {
 }
 
 async function preferPineconeMeta() {
-  return isPineconeConfigured() && (isVercelRuntime() || process.env.USE_PINECONE_DOCS === "1");
+  if (useDurableDb()) return false;
+  return (
+    isPineconeConfigured() &&
+    (isVercelRuntime() || process.env.USE_PINECONE_DOCS === "1")
+  );
 }
 
 export async function listDocuments(userId: string): Promise<AppDocument[]> {
+  if (useDurableDb()) return dbListDocuments(userId);
+
   if (await preferPineconeMeta()) {
     try {
       const remote = await pineconeListDocuments(userId);
@@ -60,6 +75,8 @@ export async function getDocument(
   id: string,
   userId: string,
 ): Promise<AppDocument | null> {
+  if (useDurableDb()) return dbGetDocument(id, userId);
+
   if (await preferPineconeMeta()) {
     try {
       const remote = await pineconeGetDocument(id, userId);
@@ -75,6 +92,8 @@ export async function getDocument(
 export async function createDocument(
   input: Omit<AppDocument, "id" | "createdAt" | "updatedAt">,
 ): Promise<AppDocument> {
+  if (useDurableDb()) return dbCreateDocument(input);
+
   const store = await ensureStore();
   const now = new Date().toISOString();
   const doc: AppDocument = {
@@ -108,6 +127,8 @@ export async function updateDocument(
     >
   >,
 ): Promise<AppDocument | null> {
+  if (useDurableDb()) return dbUpdateDocument(id, userId, patch);
+
   const store = await ensureStore();
   const idx = store.documents.findIndex(
     (d) => d.id === id && d.userId === userId,
@@ -146,6 +167,8 @@ export async function deleteDocument(
   id: string,
   userId: string,
 ): Promise<AppDocument | null> {
+  if (useDurableDb()) return dbDeleteDocument(id, userId);
+
   const store = await ensureStore();
   const idx = store.documents.findIndex(
     (d) => d.id === id && d.userId === userId,
@@ -168,6 +191,7 @@ export async function deleteDocument(
 }
 
 export async function countDocuments(userId: string): Promise<number> {
+  if (useDurableDb()) return dbCountDocuments(userId);
   const docs = await listDocuments(userId);
   return docs.length;
 }

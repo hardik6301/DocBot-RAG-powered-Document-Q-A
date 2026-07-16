@@ -3,6 +3,17 @@ import path from "path";
 import { randomUUID } from "crypto";
 import type { SourceCitation, StoredChat, StoredMessage } from "@/types";
 import { dataDir } from "@/lib/paths";
+import { useDurableDb } from "@/lib/config";
+import { MULTI_DOC_CHAT_ID } from "@/lib/chat/constants";
+import {
+  dbAppendMessages,
+  dbDeleteChatsForDocument,
+  dbGetOrCreateChat,
+  dbListChatsForUser,
+  dbListMessages,
+} from "@/lib/chat/prisma-store";
+
+export { MULTI_DOC_CHAT_ID };
 
 const DATA_FILE = () => path.join(dataDir(), "chats.json");
 
@@ -31,6 +42,8 @@ export async function getOrCreateChat(
   documentId: string,
   userId: string,
 ): Promise<StoredChat> {
+  if (useDurableDb()) return dbGetOrCreateChat(documentId, userId);
+
   const store = await ensureStore();
   const existing = store.chats.find(
     (c) => c.documentId === documentId && c.userId === userId,
@@ -55,6 +68,7 @@ export async function listMessages(
   documentId: string,
   userId: string,
 ): Promise<StoredMessage[]> {
+  if (useDurableDb()) return dbListMessages(documentId, userId);
   const chat = await getOrCreateChat(documentId, userId);
   return chat.messages;
 }
@@ -64,6 +78,8 @@ export async function appendMessages(
   userId: string,
   messages: Omit<StoredMessage, "id" | "createdAt">[],
 ): Promise<StoredMessage[]> {
+  if (useDurableDb()) return dbAppendMessages(documentId, userId, messages);
+
   const store = await ensureStore();
   let chat = store.chats.find(
     (c) => c.documentId === documentId && c.userId === userId,
@@ -95,17 +111,19 @@ export async function appendMessages(
 }
 
 export async function deleteChatsForDocument(documentId: string) {
+  if (useDurableDb()) {
+    await dbDeleteChatsForDocument(documentId);
+    return;
+  }
   const store = await ensureStore();
   store.chats = store.chats.filter((c) => c.documentId !== documentId);
   await writeStore(store);
 }
 
 export async function listChatsForUser(userId: string): Promise<StoredChat[]> {
+  if (useDurableDb()) return dbListChatsForUser(userId);
   const store = await ensureStore();
   return store.chats.filter((c) => c.userId === userId);
 }
-
-/** Special documentId for cross-document Pro chat sessions. */
-export const MULTI_DOC_CHAT_ID = "__multi__";
 
 export type { SourceCitation };
