@@ -1,21 +1,21 @@
 # DocBot — Memory
 
-## 2026-07-16 — Phase 4 history + Phase 5 polish
+## 2026-07-16 — Phase 6 deploy prep
 
-### Done this session
-- Chat history in `.data/chats.json` (GET/POST `/api/chat`)
-- Messages reload on chat revisit; delete doc clears chats + vectors
-- Chat page: loading skeletons, error state, back link, chunk warning
-- Login local-mode CTA → dashboard
-- README: setup, env, RAG flow, deploy notes
+### Confirmed
+- User pushed 4 Phase 4–5 commits to `origin/main` (clean tree before this work)
 
-### GitHub
-https://github.com/hardik6301/DocBot-RAG-powered-Document-Q-A
+### Phase 6 work (uncommitted — tell user to commit in splits)
+- `vercel.json` — 60s for upload/chat
+- Vercel-safe paths (`/tmp` uploads + data)
+- Pinecone document metadata registry for durable doc list on serverless
+- Dashboard `DeployBanner` when `NEXT_PUBLIC_VERCEL_ENV` is set
+- README deploy checklist
+
+### Commit preference
+- Never auto-commit; give user commit msgs + file steps for max contribution splits
 
 ### Still deferred
 - Supabase Auth/Storage
-- Neon Prisma migrate
-- Phase 6 Vercel production smoke test
-
-### Note
-Do not auto-commit — wait for explicit user request.
+- Neon
+- Live Vercel project creation (user clicks Import)

@@ -50,11 +50,28 @@ See `.env.example`:
 docker compose up --build
 ```
 
-## Deploy (Phase 6)
+## Deploy (Phase 6) — Vercel
 
-1. Push to GitHub  
-2. Import on Vercel  
-3. Set the same env vars in the Vercel project  
+Repo: https://github.com/hardik6301/DocBot-RAG-powered-Document-Q-A
+
+1. Go to [vercel.com/new](https://vercel.com/new) → **Import** this GitHub repo  
+2. Framework: **Next.js** (auto-detected)  
+3. **Environment variables** (Production + Preview):
+
+| Name | Required |
+|------|----------|
+| `GEMINI_API_KEY` | Yes |
+| `PINECONE_API_KEY` | Yes |
+| `PINECONE_INDEX` | Yes (`docbot`) |
+| `NEXT_PUBLIC_APP_URL` | Yes (set after first deploy to your `*.vercel.app` URL) |
+
+4. Deploy → open the URL → `/dashboard` → upload a PDF → chat  
+
+**Notes**
+- On Vercel, document list/metadata syncs to **Pinecone** (survives cold starts).  
+- Chat history is still ephemeral until Supabase.  
+- Supabase/Neon not required for the MVP demo.  
+- `vercel.json` sets `maxDuration: 60` for upload/chat.
 
 ## Status
 
