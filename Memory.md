@@ -1,27 +1,21 @@
 # DocBot — Memory
 
-## 2026-07-15 — Phase 3 RAG ingest (+ Phase 4 chat API)
+## 2026-07-16 — Phase 4 history + Phase 5 polish
+
+### Done this session
+- Chat history in `.data/chats.json` (GET/POST `/api/chat`)
+- Messages reload on chat revisit; delete doc clears chats + vectors
+- Chat page: loading skeletons, error state, back link, chunk warning
+- Login local-mode CTA → dashboard
+- README: setup, env, RAG flow, deploy notes
 
 ### GitHub
-- Remote: `https://github.com/hardik6301/DocBot-RAG-powered-Document-Q-A.git`
-- Local `main` tracks `origin/main`
-
-### Phase 3 done
-- `lib/langchain.ts` — PDF/PPT/DOCX text extract + chunk (~500/50 token approx)
-- `lib/gemini.ts` — `text-embedding-004` + grounded answer (gemini-2.0-flash)
-- `lib/pinecone.ts` — ensure index, upsert, query, delete by docId
-- `lib/ingest.ts` — full pipeline
-- Upload route runs ingest → `ready` with chunkCount, or `failed`
-- Delete removes local file + Pinecone vectors
-- Dashboard shows ProcessingStatus while indexing
-
-### Phase 4 (API wired)
-- `POST /api/chat` embeds question → Pinecone top-5 → Gemini grounded answer + sources
-
-### Blocker for live test
-- `.env.local` needs `GEMINI_API_KEY` (currently empty)
-- Pinecone key/index already set
+https://github.com/hardik6301/DocBot-RAG-powered-Document-Q-A
 
 ### Still deferred
-- Supabase auth/storage, Neon Prisma migrate
-- Persist chat messages to DB
+- Supabase Auth/Storage
+- Neon Prisma migrate
+- Phase 6 Vercel production smoke test
+
+### Note
+Do not auto-commit — wait for explicit user request.
