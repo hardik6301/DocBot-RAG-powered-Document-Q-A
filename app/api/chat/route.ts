@@ -1,14 +1,26 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { getDocument } from "@/lib/documents/store";
+import { embedQuery, generateGroundedAnswer, isGeminiConfigured } from "@/lib/gemini";
+import { isPineconeConfigured, querySimilar } from "@/lib/pinecone";
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
 
-/** Phase 4 will wire RAG. Stub keeps chat UI usable. */
 export async function POST(request: Request) {
   const user = await requireUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  if (!isGeminiConfigured() || !isPineconeConfigured()) {
+    return NextResponse.json(
+      {
+        error:
+          "RAG is not configured. Set GEMINI_API_KEY and PINECONE_API_KEY in .env.local.",
+      },
+      { status: 503 },
+    );
   }
 
   const body = (await request.json().catch(() => null)) as {
@@ -33,16 +45,53 @@ export async function POST(request: Request) {
       { status: 409 },
     );
   }
-
-  return NextResponse.json({
-    answer:
-      "RAG chat lands in Phase 3–4. Your document is saved locally — connect Gemini + Pinecone next to get grounded answers with citations.",
-    sources: [
+  if (!doc.chunkCount || doc.chunkCount < 1) {
+    return NextResponse.json(
       {
-        chunkText: `Placeholder citation for “${body.question.trim().slice(0, 80)}” from ${doc.filename}.`,
-        page: doc.pageCount ?? 1,
-        filename: doc.filename,
+        error:
+          "Document has no indexed chunks. Re-upload after configuring Gemini + Pinecone.",
       },
-    ],
-  });
+      { status: 409 },
+    );
+  }
+
+  try {
+    const question = body.question.trim();
+    const vector = await embedQuery(question);
+    const matches = await querySimilar(user.id, vector, 5, doc.id);
+
+    const usable = matches.filter((m) => m.chunkText && m.score > 0.15);
+
+    if (usable.length === 0) {
+      return NextResponse.json({
+        answer:
+          "I could not find relevant information in this document for that question.",
+        sources: [],
+      });
+    }
+
+    const answer = await generateGroundedAnswer(
+      question,
+      usable.map((m) => ({
+        text: m.chunkText,
+        page: m.page,
+        filename: m.filename || doc.filename,
+      })),
+    );
+
+    return NextResponse.json({
+      answer,
+      sources: usable.map((m) => ({
+        chunkText: m.chunkText,
+        page: m.page,
+        filename: m.filename || doc.filename,
+      })),
+    });
+  } catch (e) {
+    console.error("chat failed", e);
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : "Chat failed" },
+      { status: 500 },
+    );
+  }
 }

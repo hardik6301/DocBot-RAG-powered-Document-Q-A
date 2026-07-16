@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { deleteDocument, getDocument } from "@/lib/documents/store";
 import { deleteLocalFile } from "@/lib/storage/local";
+import { deleteDocVectors } from "@/lib/pinecone";
 
 export const runtime = "nodejs";
 
@@ -32,6 +33,7 @@ export async function DELETE(_req: Request, { params }: Ctx) {
   }
 
   await deleteLocalFile(removed.fileUrl);
+  await deleteDocVectors(removed.pineconeNs || user.id, removed.id);
 
   return NextResponse.json({ ok: true, id: removed.id });
 }

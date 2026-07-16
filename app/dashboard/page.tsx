@@ -4,6 +4,7 @@ import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import FileUpload from "@/components/upload/FileUpload";
+import ProcessingStatus from "@/components/upload/ProcessingStatus";
 import DocumentCard from "@/components/dashboard/DocumentCard";
 import Icon from "@/components/ui/Icon";
 import { useDocuments } from "@/hooks/useDocuments";
@@ -103,7 +104,13 @@ export default function DashboardPage() {
             </div>
           )}
 
-          <section className="mb-stack-lg">
+          <section className="mb-stack-lg space-y-3">
+            {uploading && (
+              <ProcessingStatus
+                status="uploading"
+                message="Extracting text, embedding chunks, and indexing in Pinecone."
+              />
+            )}
             <FileUpload
               onUpload={upload}
               uploading={uploading}

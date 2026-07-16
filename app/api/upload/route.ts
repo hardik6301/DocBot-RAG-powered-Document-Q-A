@@ -9,10 +9,13 @@ import {
   updateDocument,
 } from "@/lib/documents/store";
 import { saveLocalFile } from "@/lib/storage/local";
+import { ingestDocument } from "@/lib/ingest";
+import { deleteLocalFile } from "@/lib/storage/local";
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
 
-const MAX_BYTES = 25 * 1024 * 1024; // 25MB
+const MAX_BYTES = 25 * 1024 * 1024;
 
 export async function POST(request: Request) {
   const user = await requireUser();
@@ -51,8 +54,12 @@ export async function POST(request: Request) {
     );
   }
 
+  let docId: string | null = null;
+  let fileUrl: string | null = null;
+
   try {
     const saved = await saveLocalFile(user.id, file);
+    fileUrl = saved.fileUrl;
     const fileType = detectFileType(file.name);
 
     const doc = await createDocument({
@@ -66,17 +73,39 @@ export async function POST(request: Request) {
       pineconeNs: user.id,
       status: "processing",
     });
+    docId = doc.id;
 
-    // Phase 2 stub: mark ready without RAG (Phase 3 wires real ingestion)
+    const result = await ingestDocument({
+      userId: user.id,
+      docId: doc.id,
+      filename: file.name,
+      fileUrl: saved.fileUrl,
+      fileType,
+    });
+
     const ready = await updateDocument(doc.id, user.id, {
       status: "ready",
-      pageCount: 1,
-      chunkCount: 0,
+      pageCount: result.pageCount,
+      chunkCount: result.chunkCount,
     });
 
     return NextResponse.json({ document: ready ?? doc }, { status: 201 });
   } catch (e) {
-    console.error("upload failed", e);
-    return NextResponse.json({ error: "Upload failed" }, { status: 500 });
+    console.error("upload/ingest failed", e);
+    const message = e instanceof Error ? e.message : "Upload failed";
+
+    if (docId) {
+      await updateDocument(docId, user.id, { status: "failed" });
+    } else if (fileUrl) {
+      await deleteLocalFile(fileUrl);
+    }
+
+    return NextResponse.json(
+      {
+        error: message,
+        documentId: docId,
+      },
+      { status: 500 },
+    );
   }
 }

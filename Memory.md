@@ -1,24 +1,27 @@
 # DocBot — Memory
 
-## 2026-07-14 — Phase 2 (local mode, no Supabase)
+## 2026-07-15 — Phase 3 RAG ingest (+ Phase 4 chat API)
 
-### Decision
-Supabase deferred. App runs in **local mode**:
-- Fixed dev user (`dev@docbot.local`)
-- Files → `public/uploads/`
-- Metadata → `.data/documents.json`
-- Free tier enforced: 3 documents
+### GitHub
+- Remote: `https://github.com/hardik6301/DocBot-RAG-powered-Document-Q-A.git`
+- Local `main` tracks `origin/main`
 
-### Done
-- `GET /api/documents`, `DELETE /api/documents/[id]`, `POST /api/upload`
-- Dashboard wired to live list/upload/delete + usage banner
-- Chat loads real document + stub `/api/chat` (RAG next)
-- Auth helpers fall back to local user when Supabase env empty
+### Phase 3 done
+- `lib/langchain.ts` — PDF/PPT/DOCX text extract + chunk (~500/50 token approx)
+- `lib/gemini.ts` — `text-embedding-004` + grounded answer (gemini-2.0-flash)
+- `lib/pinecone.ts` — ensure index, upsert, query, delete by docId
+- `lib/ingest.ts` — full pipeline
+- Upload route runs ingest → `ready` with chunkCount, or `failed`
+- Delete removes local file + Pinecone vectors
+- Dashboard shows ProcessingStatus while indexing
 
-### Next
-- Phase 3: PDF/PPT chunk + Gemini embeddings + Pinecone (key already in `.env.local`)
-- Phase 4: real chat answers
-- Later: swap local store/storage for Supabase + Neon
+### Phase 4 (API wired)
+- `POST /api/chat` embeds question → Pinecone top-5 → Gemini grounded answer + sources
 
-### Note
-Do not commit `.env.local` (contains secrets).
+### Blocker for live test
+- `.env.local` needs `GEMINI_API_KEY` (currently empty)
+- Pinecone key/index already set
+
+### Still deferred
+- Supabase auth/storage, Neon Prisma migrate
+- Persist chat messages to DB
