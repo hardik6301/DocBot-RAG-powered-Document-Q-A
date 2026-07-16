@@ -7,6 +7,7 @@ import FileUpload from "@/components/upload/FileUpload";
 import ProcessingStatus from "@/components/upload/ProcessingStatus";
 import DocumentCard from "@/components/dashboard/DocumentCard";
 import DeployBanner from "@/components/dashboard/DeployBanner";
+import ManageBillingButton from "@/components/billing/ManageBillingButton";
 import Icon from "@/components/ui/Icon";
 import { useDocuments } from "@/hooks/useDocuments";
 
@@ -58,23 +59,7 @@ export default function DashboardPage() {
                 ? "Pro active — unlimited uploads, multi-doc Q&A, analytics."
                 : `Local mode — Free tier: ${limit ?? 3} documents.`}
             </p>
-            {isPro ? (
-              <button
-                type="button"
-                onClick={() => void setPro(false)}
-                className="mt-4 block w-full rounded-lg border border-outline-variant py-2 text-center text-body-sm font-semibold text-on-surface transition-all hover:bg-surface-container-low active:scale-95"
-              >
-                Switch to Free (demo)
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => void setPro(true)}
-                className="mt-4 block w-full rounded-lg bg-primary py-2 text-center text-body-sm font-semibold text-on-primary transition-all hover:opacity-90 active:scale-95"
-              >
-                Unlock Pro (demo)
-              </button>
-            )}
+            <ManageBillingButton isPro={isPro} onDemoToggle={setPro} />
           </div>
         </div>
         <div className="mt-auto space-y-2">

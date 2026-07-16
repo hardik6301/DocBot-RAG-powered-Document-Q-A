@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import Icon from "@/components/ui/Icon";
+import UpgradeButton from "@/components/billing/UpgradeButton";
 
 const freeFeatures = [
   "3 Documents per month",
@@ -111,12 +112,14 @@ export default function Pricing() {
                 </li>
               ))}
             </ul>
-            <Link
-              href="/auth/login"
-              className="block w-full rounded-xl bg-primary py-4 text-center font-bold text-on-primary shadow-lg transition-all hover:opacity-90 active:scale-95"
+            <UpgradeButton
+              className="block w-full rounded-xl bg-primary py-4 text-center font-bold text-on-primary shadow-lg transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
+              onUnavailable={() => {
+                window.location.href = "/dashboard";
+              }}
             >
               Upgrade Now
-            </Link>
+            </UpgradeButton>
           </motion.div>
         </div>
       </div>
