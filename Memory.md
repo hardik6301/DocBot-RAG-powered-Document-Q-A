@@ -1,5 +1,21 @@
 # DocBot — Memory
 
+## 2026-07-16 — Supabase Auth + Storage + Neon durability
+
+### Shipped (uncommitted — user commits in splits)
+- Prisma schema: Chat `userId`/`kind`, optional `documentId`, User Stripe fields
+- Dual-mode stores: Neon when `DATABASE_URL`, else `.data` JSON
+- Supabase Storage via service role (`lib/storage/files.ts`, bucket `documents`)
+- Ingest materializes Storage files to temp for parsers
+- Auth: no silent fallback to local user when Supabase fails
+- Middleware protects `/analytics` + `/billing`
+- README setup for Supabase bucket + `prisma db push`
+
+### Still local-by-default
+- Without Supabase/Neon env, app keeps working as before
+
+---
+
 ## 2026-07-16 — Phase 7 Pro features (local demo)
 
 ### Shipped (uncommitted — user commits in splits)
@@ -24,8 +40,8 @@
 - Pricing + dashboard wired via `UpgradeButton` / `ManageBillingButton`
 - Demo Pro toggle remains when Stripe env unset
 
-### Still deferred
-- Supabase Auth/Storage + durable multi-user billing store
+### Follow-up
+- Supabase/Neon adapters shipped in later session (see top of Memory)
 
 ---
 

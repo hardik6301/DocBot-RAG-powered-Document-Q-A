@@ -33,12 +33,12 @@ Build in order. Do not start a phase until the previous phase’s exit criteria 
 
 **Tasks**
 
-- [ ] Supabase browser + server clients (`lib/supabase/*`)
-- [ ] Auth callback route (`/auth/callback`)
-- [ ] Login page: Google + email/password
-- [ ] Navbar (logged out / logged in states)
-- [ ] Middleware or server checks: `/dashboard` and `/chat/*` require auth
-- [ ] On first login: upsert Prisma `User` from Supabase user
+- [x] Supabase browser + server clients (`lib/supabase/*`)
+- [x] Auth callback route (`/auth/callback`)
+- [x] Login page: Google + email/password
+- [x] Navbar (logged out / logged in states)
+- [x] Middleware or server checks: `/dashboard` and `/chat/*` require auth
+- [x] On first login: upsert Prisma `User` from Supabase user
 
 **Exit criteria**
 

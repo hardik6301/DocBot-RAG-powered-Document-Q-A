@@ -11,7 +11,8 @@ RAG-powered Document Q&A. Upload PDFs/PPTs, ask questions, get answers with sour
 | App | Next.js 14 (App Router) + TypeScript + Tailwind |
 | LLM / embeddings | Gemini (`gemini-2.0-flash`, `text-embedding-004`) |
 | Vector DB | Pinecone (namespace = userId) |
-| Local mode | JSON store (`.data/`) + `public/uploads/` (Supabase later) |
+| Auth / files | Supabase Auth + Storage (optional; local JSON fallback) |
+| DB | Neon + Prisma (optional; local JSON fallback) |
 
 ## Quick start
 
@@ -37,7 +38,29 @@ See `.env.example`:
 - `GEMINI_API_KEY` — required for ingest + chat  
 - `PINECONE_API_KEY` / `PINECONE_INDEX` — required for vectors  
 - `STRIPE_SECRET_KEY` / `STRIPE_PRICE_ID` / `STRIPE_WEBHOOK_SECRET` — optional Pro billing  
-- Supabase / Neon — optional until you wire auth & Postgres  
+- Supabase + Neon — optional durable Auth / Storage / Postgres  
+
+### Supabase + Neon (durable mode)
+
+When these are set, DocBot stops using `.data/*.json` for docs/chats and uses Neon; files go to Supabase Storage.
+
+1. Create a [Supabase](https://supabase.com) project  
+2. Enable Email + Google Auth; set redirect URL to `http://localhost:3000/auth/callback` (and your Vercel URL)  
+3. Create a **private** Storage bucket named `documents` (or set `SUPABASE_STORAGE_BUCKET`)  
+4. Create a [Neon](https://neon.tech) Postgres database  
+5. Fill in `.env.local`:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `DATABASE_URL`
+6. Push schema:
+   ```bash
+   npx prisma db push
+   npx prisma generate
+   ```
+7. Restart `npm run dev` → `/auth/login` → sign in → upload/chat persists in Neon
+
+Without those keys, local mode still works (fixed `dev@docbot.local`).
 
 ### Stripe Pro (optional)
 
@@ -51,7 +74,7 @@ See `.env.example`:
 
 1. **Upload** — save file → extract text → chunk (~500/50 tokens) → embed → Pinecone upsert  
 2. **Chat** — embed question → top-5 chunks → grounded Gemini answer + citations  
-3. **History** — messages persisted in `.data/chats.json` and reload on revisit  
+3. **History** — messages in Neon (`Chat`/`Message`) when `DATABASE_URL` is set; else `.data/chats.json`  
 
 ## Docker
 
@@ -76,16 +99,19 @@ Repo: https://github.com/hardik6301/DocBot-RAG-powered-Document-Q-A
 | `STRIPE_SECRET_KEY` | Optional (Pro Checkout) |
 | `STRIPE_PRICE_ID` | Optional |
 | `STRIPE_WEBHOOK_SECRET` | Optional (recommended in production) |
+| `NEXT_PUBLIC_SUPABASE_URL` | Optional (Auth) |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Optional |
+| `SUPABASE_SERVICE_ROLE_KEY` | Optional (Storage) |
+| `DATABASE_URL` | Optional (Neon durable docs/chats) |
 
 4. Deploy → open the URL → `/dashboard` → upload a PDF → chat  
 
 **Notes**
-- On Vercel, document list/metadata syncs to **Pinecone** (survives cold starts).  
-- Chat history is still ephemeral until Supabase.  
-- Supabase/Neon not required for the MVP demo.  
+- With Neon + Supabase Storage, docs/chats/files survive Vercel cold starts.  
+- Without them, local JSON + Pinecone doc meta still works for demos.  
 - `vercel.json` sets `maxDuration: 60` for upload/chat.
 
 ## Status
 
-- Phases 0–7: UI + RAG + Pro features + optional Stripe Checkout  
-- Deferred: Supabase Auth/Storage, Neon Prisma, multi-tenant billing store
+- Phases 0–7 + durable Supabase/Neon adapters (optional env)  
+- Local mode remains the default until you add Supabase + Neon keys
