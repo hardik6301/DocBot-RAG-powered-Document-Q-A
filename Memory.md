@@ -1,5 +1,18 @@
 # DocBot — Memory
 
+## 2026-07-16 — Production Docker polish
+
+### Shipped (uncommitted — user commits)
+- Multi-stage `Dockerfile` (deps → build → runner as `nextjs`)
+- `.dockerignore` (keeps secrets + `.data` out of image)
+- `docker-compose.yml` named volumes + healthcheck (no bind-mount of source)
+- `postinstall` / `build` run `prisma generate`; `docker:up` / `docker:down` scripts
+
+### Note
+- User has 4 Supabase commits ahead of origin — remind to `git push`
+
+---
+
 ## 2026-07-16 — Supabase Auth + Storage + Neon durability
 
 ### Shipped (uncommitted — user commits in splits)

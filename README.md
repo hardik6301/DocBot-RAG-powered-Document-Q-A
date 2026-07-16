@@ -78,9 +78,19 @@ Without those keys, local mode still works (fixed `dev@docbot.local`).
 
 ## Docker
 
+Production-style multi-stage image (Node 20 Alpine). Needs a `.env.local` beside the compose file.
+
 ```bash
+# build + run
+npm run docker:up
+# or
 docker compose up --build
 ```
+
+- App: http://localhost:3000  
+- Local JSON/uploads persist in named volumes (`docbot-data`, `docbot-uploads`)  
+- For durable Auth/DB/files, set Supabase + Neon vars in `.env.local` and run `npx prisma db push` against Neon once  
+- Stop: `npm run docker:down`
 
 ## Deploy (Phase 6) — Vercel
 
