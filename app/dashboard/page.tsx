@@ -6,6 +6,7 @@ import Footer from "@/components/layout/Footer";
 import FileUpload from "@/components/upload/FileUpload";
 import ProcessingStatus from "@/components/upload/ProcessingStatus";
 import DocumentCard from "@/components/dashboard/DocumentCard";
+import DeployBanner from "@/components/dashboard/DeployBanner";
 import Icon from "@/components/ui/Icon";
 import { useDocuments } from "@/hooks/useDocuments";
 
@@ -90,6 +91,8 @@ export default function DashboardPage() {
               {usage.used}/{limit} used
             </div>
           </header>
+
+          <DeployBanner />
 
           {atLimit && (
             <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-body-sm text-amber-900">
