@@ -97,12 +97,17 @@ export default function LoginForm() {
       </p>
 
       {!configured && (
-        <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-body-sm text-amber-900">
-          Supabase is not configured. Add{" "}
-          <code className="font-mono text-xs">NEXT_PUBLIC_SUPABASE_URL</code>{" "}
-          and{" "}
-          <code className="font-mono text-xs">NEXT_PUBLIC_SUPABASE_ANON_KEY</code>{" "}
-          to <code className="font-mono text-xs">.env.local</code>.
+        <div className="mt-4 space-y-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-3 text-body-sm text-amber-900">
+          <p>
+            Local mode — Supabase is not configured. You can use the app without
+            sign-in.
+          </p>
+          <Link
+            href="/dashboard"
+            className="inline-flex rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-on-primary"
+          >
+            Continue to dashboard →
+          </Link>
         </div>
       )}
 
