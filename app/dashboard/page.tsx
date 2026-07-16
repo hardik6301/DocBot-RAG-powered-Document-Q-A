@@ -14,18 +14,20 @@ export default function DashboardPage() {
   const {
     documents,
     usage,
+    isPro,
     loading,
     error,
     uploading,
     upload,
     remove,
+    setPro,
   } = useDocuments();
 
-  const limit = usage.limit ?? 3;
+  const limit = usage.limit;
   const atLimit = usage.limit != null && usage.used >= usage.limit;
   const pct = usage.limit
     ? Math.min(100, Math.round((usage.used / usage.limit) * 100))
-    : 0;
+    : 100;
 
   return (
     <div className="min-h-[100dvh] bg-surface">
@@ -40,7 +42,9 @@ export default function DashboardPage() {
             <div className="mb-2 flex items-end justify-between">
               <span className="text-body-sm font-medium">Storage Used</span>
               <span className="text-body-sm text-on-surface-variant">
-                {usage.used}/{limit} documents
+                {isPro
+                  ? `${usage.used} · Unlimited`
+                  : `${usage.used}/${limit ?? 3} documents`}
               </span>
             </div>
             <div className="h-2 w-full overflow-hidden rounded-full bg-surface-variant">
@@ -50,31 +54,44 @@ export default function DashboardPage() {
               />
             </div>
             <p className="mt-4 text-xs text-on-secondary-container">
-              Local mode — Supabase comes later. Free tier: {limit} documents.
+              {isPro
+                ? "Pro active — unlimited uploads, multi-doc Q&A, analytics."
+                : `Local mode — Free tier: ${limit ?? 3} documents.`}
             </p>
-            <Link
-              href="/#pricing"
-              className="mt-4 block w-full rounded-lg bg-primary py-2 text-center text-body-sm font-semibold text-on-primary transition-all hover:opacity-90 active:scale-95"
-            >
-              Upgrade Now
-            </Link>
+            {isPro ? (
+              <button
+                type="button"
+                onClick={() => void setPro(false)}
+                className="mt-4 block w-full rounded-lg border border-outline-variant py-2 text-center text-body-sm font-semibold text-on-surface transition-all hover:bg-surface-container-low active:scale-95"
+              >
+                Switch to Free (demo)
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => void setPro(true)}
+                className="mt-4 block w-full rounded-lg bg-primary py-2 text-center text-body-sm font-semibold text-on-primary transition-all hover:opacity-90 active:scale-95"
+              >
+                Unlock Pro (demo)
+              </button>
+            )}
           </div>
         </div>
         <div className="mt-auto space-y-2">
-          <a
-            href="#"
+          <Link
+            href="/chat/multi"
             className="flex items-center gap-3 rounded-lg px-3 py-2 text-on-surface-variant transition-colors hover:bg-surface-container"
           >
-            <Icon name="help" className="text-[20px]" />
-            <span className="font-mono text-label-caps">Help Center</span>
-          </a>
-          <a
-            href="#"
+            <Icon name="hub" className="text-[20px]" />
+            <span className="font-mono text-label-caps">Multi-doc Q&A</span>
+          </Link>
+          <Link
+            href="/analytics"
             className="flex items-center gap-3 rounded-lg px-3 py-2 text-on-surface-variant transition-colors hover:bg-surface-container"
           >
-            <Icon name="archive" className="text-[20px]" />
-            <span className="font-mono text-label-caps">Archived Files</span>
-          </a>
+            <Icon name="insights" className="text-[20px]" />
+            <span className="font-mono text-label-caps">Analytics</span>
+          </Link>
         </div>
       </aside>
 
@@ -87,8 +104,15 @@ export default function DashboardPage() {
                 Manage and analyze your technical documentation.
               </p>
             </div>
-            <div className="rounded-full bg-surface-container-low px-4 py-2 font-mono text-label-caps text-on-surface-variant">
-              {usage.used}/{limit} used
+            <div className="flex flex-wrap items-center gap-2">
+              {isPro && (
+                <span className="rounded-full bg-primary-container px-3 py-1.5 font-mono text-label-caps text-on-primary-container">
+                  Pro · Priority ingest
+                </span>
+              )}
+              <div className="rounded-full bg-surface-container-low px-4 py-2 font-mono text-label-caps text-on-surface-variant">
+                {isPro ? `${usage.used} docs · Unlimited` : `${usage.used}/${limit ?? 3} used`}
+              </div>
             </div>
           </header>
 
@@ -96,8 +120,8 @@ export default function DashboardPage() {
 
           {atLimit && (
             <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-body-sm text-amber-900">
-              Free tier full ({limit}/{limit}). Delete a document to upload
-              another.
+              Free tier full ({limit}/{limit}). Delete a document or unlock Pro
+              to upload more.
             </div>
           )}
 

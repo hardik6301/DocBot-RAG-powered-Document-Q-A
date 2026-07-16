@@ -8,7 +8,9 @@ import { LOCAL_DEV_USER, type AppUser } from "@/types";
  */
 export async function requireUser(): Promise<AppUser | null> {
   if (!isSupabaseConfigured()) {
-    return LOCAL_DEV_USER;
+    const { getSettings } = await import("@/lib/settings");
+    const settings = await getSettings();
+    return { ...LOCAL_DEV_USER, isPro: settings.isPro };
   }
 
   try {

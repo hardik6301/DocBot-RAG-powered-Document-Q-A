@@ -8,6 +8,7 @@ type Usage = { used: number; limit: number | null };
 export function useDocuments() {
   const [documents, setDocuments] = useState<AppDocument[]>([]);
   const [usage, setUsage] = useState<Usage>({ used: 0, limit: 3 });
+  const [isPro, setIsPro] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -20,6 +21,7 @@ export function useDocuments() {
       if (!res.ok) throw new Error(data.error || "Failed to load documents");
       setDocuments(data.documents ?? []);
       setUsage(data.usage ?? { used: 0, limit: 3 });
+      setIsPro(Boolean(data.isPro));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load");
     } finally {
@@ -68,14 +70,34 @@ export function useDocuments() {
     [refresh],
   );
 
+  const setPro = useCallback(
+    async (enabled: boolean) => {
+      setError(null);
+      const res = await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isPro: enabled }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Failed to update plan");
+        throw new Error(data.error || "Failed to update plan");
+      }
+      await refresh();
+    },
+    [refresh],
+  );
+
   return {
     documents,
     usage,
+    isPro,
     loading,
     error,
     uploading,
     refresh,
     upload,
     remove,
+    setPro,
   };
 }

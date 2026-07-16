@@ -20,6 +20,7 @@ export async function GET() {
       used,
       limit: user.isPro ? null : FREE_TIER_LIMIT,
     },
+    isPro: user.isPro,
     localMode: true,
   });
 }
