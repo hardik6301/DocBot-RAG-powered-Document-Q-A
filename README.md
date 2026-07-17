@@ -9,7 +9,7 @@ RAG-powered Document Q&A. Upload PDFs/PPTs, ask questions, get answers with sour
 | Layer | Tech |
 |-------|------|
 | App | Next.js 14 (App Router) + TypeScript + Tailwind |
-| LLM / embeddings | Gemini (`gemini-2.0-flash`, `text-embedding-004`) |
+| LLM / embeddings | Gemini (`gemini-flash-latest`, `gemini-embedding-001` @ 768d) |
 | Vector DB | Pinecone (namespace = userId) |
 | Auth / files | Supabase Auth + Storage (optional; local JSON fallback) |
 | DB | Neon + Prisma (optional; local JSON fallback) |
