@@ -1,4 +1,11 @@
+/** Free-tier cap — only enforced when `BILLING_ENABLED` is true. */
 export const FREE_TIER_LIMIT = 3;
+
+/**
+ * Billing / Pro gates. Keep false until Stripe subscriptions are ready.
+ * When false: unlimited uploads + multi-doc + analytics for everyone.
+ */
+export const BILLING_ENABLED = false;
 
 export function isSupabaseConfigured() {
   return Boolean(

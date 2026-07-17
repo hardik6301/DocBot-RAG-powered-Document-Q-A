@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { getSettings } from "@/lib/settings";
+import { BILLING_ENABLED } from "@/lib/config";
 import {
   appBaseUrl,
   getStripe,
@@ -11,13 +12,27 @@ import {
 export const runtime = "nodejs";
 
 export async function GET() {
-  return NextResponse.json({ configured: isStripeConfigured() });
+  return NextResponse.json({
+    configured: BILLING_ENABLED && isStripeConfigured(),
+    billingEnabled: BILLING_ENABLED,
+  });
 }
 
 export async function POST() {
   const user = await requireUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  if (!BILLING_ENABLED) {
+    return NextResponse.json(
+      {
+        error: "Billing is disabled for now. Everything is free.",
+        configured: false,
+        billingEnabled: false,
+      },
+      { status: 503 },
+    );
   }
 
   if (!isStripeConfigured()) {

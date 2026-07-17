@@ -1,16 +1,25 @@
-import { isDatabaseConfigured, isSupabaseConfigured } from "@/lib/config";
+import {
+  BILLING_ENABLED,
+  isDatabaseConfigured,
+  isSupabaseConfigured,
+} from "@/lib/config";
 import { LOCAL_DEV_USER, type AppUser } from "@/types";
+
+/** Full access while billing is off; otherwise use stored Pro flag. */
+function withAccess(isPro: boolean): boolean {
+  return BILLING_ENABLED ? isPro : true;
+}
 
 /**
  * Resolve current app user.
- * Local mode (no Supabase): fixed dev user + local settings.json isPro.
+ * Local mode (no Supabase): fixed dev user.
  * Supabase + Neon: session user upserted in Prisma.
  */
 export async function requireUser(): Promise<AppUser | null> {
   if (!isSupabaseConfigured()) {
     const { getLocalSettings } = await import("@/lib/settings");
     const settings = await getLocalSettings();
-    return { ...LOCAL_DEV_USER, isPro: settings.isPro };
+    return { ...LOCAL_DEV_USER, isPro: withAccess(settings.isPro) };
   }
 
   try {
@@ -35,7 +44,7 @@ export async function requireUser(): Promise<AppUser | null> {
           null,
         avatarUrl:
           (authUser.user_metadata?.avatar_url as string | undefined) ?? null,
-        isPro: settings.isPro,
+        isPro: withAccess(settings.isPro),
       };
     }
 
@@ -70,7 +79,7 @@ export async function requireUser(): Promise<AppUser | null> {
       email: user.email,
       fullName: user.fullName,
       avatarUrl: user.avatarUrl,
-      isPro: user.isPro,
+      isPro: withAccess(user.isPro),
     };
   } catch (e) {
     console.error("requireUser failed", e);

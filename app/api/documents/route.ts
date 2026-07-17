@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import {
+  BILLING_ENABLED,
   FREE_TIER_LIMIT,
   isLocalDevMode,
   isStorageConfigured,
@@ -23,9 +24,10 @@ export async function GET() {
     documents,
     usage: {
       used,
-      limit: user.isPro ? null : FREE_TIER_LIMIT,
+      limit: !BILLING_ENABLED || user.isPro ? null : FREE_TIER_LIMIT,
     },
     isPro: user.isPro,
+    billingEnabled: BILLING_ENABLED,
     localMode: isLocalDevMode(),
     durableDb: useDurableDb(),
     storage: isStorageConfigured() ? "supabase" : "local",

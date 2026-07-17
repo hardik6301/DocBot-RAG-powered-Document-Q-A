@@ -54,7 +54,6 @@ export default function AnalyticsPage() {
       <Navbar variant="app" />
       <main className="mx-auto max-w-5xl px-4 pb-24 pt-24 md:px-container-padding">
         <header className="mb-stack-lg">
-          <p className="font-mono text-label-caps text-primary">Pro</p>
           <h1 className="text-headline-xl text-on-surface">Analytics</h1>
           <p className="mt-1 text-on-surface-variant">
             Top questions and usage across your document chats.
@@ -73,7 +72,7 @@ export default function AnalyticsPage() {
               href="/dashboard"
               className="mt-6 inline-block rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-on-primary"
             >
-              Upgrade from dashboard
+              Back to dashboard
             </Link>
           </div>
         )}

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
-import { FREE_TIER_LIMIT } from "@/lib/config";
+import { BILLING_ENABLED, FREE_TIER_LIMIT } from "@/lib/config";
 import {
   countDocuments,
   createDocument,
@@ -23,7 +23,7 @@ export async function POST(request: Request) {
   }
 
   const used = await countDocuments(user.id);
-  if (!user.isPro && used >= FREE_TIER_LIMIT) {
+  if (BILLING_ENABLED && !user.isPro && used >= FREE_TIER_LIMIT) {
     return NextResponse.json(
       {
         error: `Free tier limit reached (${FREE_TIER_LIMIT} documents). Delete a document or upgrade.`,
