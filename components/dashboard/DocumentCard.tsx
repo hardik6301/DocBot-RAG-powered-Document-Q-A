@@ -44,6 +44,7 @@ function iconFor(type: string) {
 export default function DocumentCard({ doc, onDelete }: Props) {
   const ready = doc.status === "ready";
   const processing = doc.status === "processing";
+  const failed = doc.status === "failed";
   const visual = iconFor(doc.fileType);
 
   return (
@@ -89,20 +90,27 @@ export default function DocumentCard({ doc, onDelete }: Props) {
             {doc.pageCount != null ? `${doc.pageCount} Pages` : "—"}
           </span>
         </div>
+        {failed && (
+          <p className="mt-2 text-xs text-rose-700">
+            Ingest failed — delete and re-upload after fixing API/quota issues.
+          </p>
+        )}
       </div>
 
-      <div
-        className={`mt-auto flex items-center justify-between border-t border-outline-variant pt-4 ${
-          !ready ? "pointer-events-none opacity-50" : ""
-        }`}
-      >
-        <Link
-          href={`/chat/${doc.id}`}
-          className="flex items-center gap-2 font-semibold text-primary transition-all hover:gap-3"
-        >
-          Ask Questions
-          <Icon name="arrow_forward" className="text-[18px]" />
-        </Link>
+      <div className="mt-auto flex items-center justify-between border-t border-outline-variant pt-4">
+        {ready ? (
+          <Link
+            href={`/chat/${doc.id}`}
+            className="flex items-center gap-2 font-semibold text-primary transition-all hover:gap-3"
+          >
+            Ask Questions
+            <Icon name="arrow_forward" className="text-[18px]" />
+          </Link>
+        ) : (
+          <span className="text-body-sm font-medium text-on-surface-variant">
+            {processing ? "Indexing…" : "Not ready"}
+          </span>
+        )}
         <button
           type="button"
           onClick={() => onDelete?.(doc.id)}

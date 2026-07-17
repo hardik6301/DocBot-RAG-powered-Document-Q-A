@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -7,7 +8,6 @@ import FileUpload from "@/components/upload/FileUpload";
 import ProcessingStatus from "@/components/upload/ProcessingStatus";
 import DocumentCard from "@/components/dashboard/DocumentCard";
 import DeployBanner from "@/components/dashboard/DeployBanner";
-import ManageBillingButton from "@/components/billing/ManageBillingButton";
 import Icon from "@/components/ui/Icon";
 import { useDocuments } from "@/hooks/useDocuments";
 
@@ -15,24 +15,33 @@ export default function DashboardPage() {
   const {
     documents,
     usage,
-    isPro,
     loading,
     error,
     uploading,
     upload,
     remove,
-    setPro,
   } = useDocuments();
+  const [query, setQuery] = useState("");
 
-  const limit = usage.limit;
+  const unlimited = usage.limit == null;
   const atLimit = usage.limit != null && usage.used >= usage.limit;
-  const pct = usage.limit
-    ? Math.min(100, Math.round((usage.used / usage.limit) * 100))
-    : 100;
+  const pct = unlimited
+    ? Math.min(100, usage.used === 0 ? 0 : 12 + Math.min(usage.used * 4, 40))
+    : Math.min(100, Math.round((usage.used / (usage.limit ?? 1)) * 100));
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return documents;
+    return documents.filter((d) => d.filename.toLowerCase().includes(q));
+  }, [documents, query]);
 
   return (
     <div className="min-h-[100dvh] bg-surface">
-      <Navbar variant="app" />
+      <Navbar
+        variant="app"
+        searchQuery={query}
+        onSearchChange={setQuery}
+      />
 
       <aside className="fixed left-0 top-16 z-40 hidden h-[calc(100dvh-64px)] w-64 flex-col border-r border-outline-variant bg-surface-container-lowest p-stack-lg lg:flex">
         <div className="mb-stack-lg">
@@ -40,12 +49,10 @@ export default function DashboardPage() {
             WORKSPACE STATS
           </h3>
           <div className="rounded-xl border border-outline-variant bg-surface p-4">
-            <div className="mb-2 flex items-end justify-between">
-              <span className="text-body-sm font-medium">Storage Used</span>
-              <span className="text-body-sm text-on-surface-variant">
-                {isPro
-                  ? `${usage.used} · Unlimited`
-                  : `${usage.used}/${limit ?? 3} documents`}
+            <div className="mb-2 flex items-end justify-between gap-2">
+              <span className="text-body-sm font-medium">Documents</span>
+              <span className="shrink-0 text-body-sm text-on-surface-variant">
+                {unlimited ? usage.used : `${usage.used}/${usage.limit}`}
               </span>
             </div>
             <div className="h-2 w-full overflow-hidden rounded-full bg-surface-variant">
@@ -54,12 +61,11 @@ export default function DashboardPage() {
                 style={{ width: `${pct}%` }}
               />
             </div>
-            <p className="mt-4 text-xs text-on-secondary-container">
-              {isPro
-                ? "Pro active — unlimited uploads, multi-doc Q&A, analytics."
-                : `Local mode — Free tier: ${limit ?? 3} documents.`}
+            <p className="mt-3 text-xs leading-relaxed text-on-secondary-container">
+              {unlimited
+                ? "Free & unlimited for now. Multi-doc Q&A and analytics included."
+                : `Free tier: ${usage.limit} documents.`}
             </p>
-            <ManageBillingButton isPro={isPro} onDemoToggle={setPro} />
           </div>
         </div>
         <div className="mt-auto space-y-2">
@@ -89,15 +95,10 @@ export default function DashboardPage() {
                 Manage and analyze your technical documentation.
               </p>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              {isPro && (
-                <span className="rounded-full bg-primary-container px-3 py-1.5 font-mono text-label-caps text-on-primary-container">
-                  Pro · Priority ingest
-                </span>
-              )}
-              <div className="rounded-full bg-surface-container-low px-4 py-2 font-mono text-label-caps text-on-surface-variant">
-                {isPro ? `${usage.used} docs · Unlimited` : `${usage.used}/${limit ?? 3} used`}
-              </div>
+            <div className="rounded-full bg-surface-container-low px-4 py-2 font-mono text-label-caps text-on-surface-variant">
+              {unlimited
+                ? `${usage.used} documents`
+                : `${usage.used}/${usage.limit} used`}
             </div>
           </header>
 
@@ -105,8 +106,8 @@ export default function DashboardPage() {
 
           {atLimit && (
             <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-body-sm text-amber-900">
-              Free tier full ({limit}/{limit}). Delete a document or unlock Pro
-              to upload more.
+              Upload limit reached ({usage.limit}/{usage.limit}). Delete a
+              document to upload another.
             </div>
           )}
 
@@ -152,9 +153,15 @@ export default function DashboardPage() {
                 PDF or PPT — then ask questions with source citations.
               </p>
             </div>
+          ) : filtered.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-outline-variant bg-surface-container-low px-6 py-12 text-center">
+              <p className="text-body-md text-on-surface-variant">
+                No documents match “{query.trim()}”.
+              </p>
+            </div>
           ) : (
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-              {documents.map((doc) => (
+              {filtered.map((doc) => (
                 <DocumentCard
                   key={doc.id}
                   doc={doc}
@@ -163,7 +170,7 @@ export default function DashboardPage() {
                   }}
                 />
               ))}
-              {!atLimit && (
+              {!atLimit && !query.trim() && (
                 <div className="hidden h-64 flex-col items-center justify-center rounded-xl border-2 border-dashed border-outline-variant bg-surface-container-low text-center xl:flex">
                   <Icon
                     name="add_circle"

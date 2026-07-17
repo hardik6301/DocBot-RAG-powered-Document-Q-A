@@ -9,15 +9,27 @@ import { createClient } from "@/lib/supabase/client";
 
 type NavbarProps = {
   variant?: "marketing" | "app";
+  /** Controlled search for dashboard (optional). */
+  searchQuery?: string;
+  onSearchChange?: (value: string) => void;
 };
 
-const links = [
+const appLinks = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/chat/multi", label: "Multi-doc" },
   { href: "/analytics", label: "Analytics" },
 ];
 
-export default function Navbar({ variant = "marketing" }: NavbarProps) {
+const marketingLinks = [
+  { href: "/#how-it-works", label: "How it works" },
+  { href: "/#pricing", label: "Pricing" },
+];
+
+export default function Navbar({
+  variant = "marketing",
+  searchQuery,
+  onSearchChange,
+}: NavbarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
@@ -46,11 +58,13 @@ export default function Navbar({ variant = "marketing" }: NavbarProps) {
     router.refresh();
   }
 
+  const links = variant === "app" ? appLinks : marketingLinks;
+
   return (
     <nav className="fixed top-0 z-50 flex h-16 w-full items-center justify-between border-b border-outline-variant bg-surface px-4 md:px-container-padding">
       <div className="flex items-center gap-8">
         <Link
-          href="/"
+          href={variant === "app" ? "/dashboard" : "/"}
           className="text-headline-lg font-bold text-primary transition-opacity hover:opacity-90"
         >
           DocBot
@@ -59,8 +73,11 @@ export default function Navbar({ variant = "marketing" }: NavbarProps) {
           {links.map((link) => {
             const active =
               link.href !== "#" &&
+              !link.href.includes("#") &&
               (pathname === link.href ||
-                (link.href === "/dashboard" && pathname.startsWith("/chat")));
+                (link.href === "/dashboard" &&
+                  (pathname.startsWith("/chat") ||
+                    pathname.startsWith("/analytics"))));
             return (
               <Link
                 key={link.label}
@@ -87,13 +104,19 @@ export default function Navbar({ variant = "marketing" }: NavbarProps) {
             />
             <input
               type="search"
+              value={searchQuery ?? ""}
+              onChange={(e) => onSearchChange?.(e.target.value)}
               placeholder="Search documents..."
               className="w-56 rounded-lg border border-outline-variant bg-surface-container-low py-2 pl-10 pr-4 text-body-sm outline-none transition-all focus:border-transparent focus:ring-2 focus:ring-primary md:w-64"
             />
           </div>
         )}
 
-        {user ? (
+        {variant === "app" && !configured ? (
+          <span className="hidden rounded-full bg-surface-container-low px-3 py-1.5 font-mono text-label-caps text-on-surface-variant sm:inline">
+            Local mode
+          </span>
+        ) : user ? (
           <>
             <span className="hidden max-w-[140px] truncate text-body-sm text-on-surface-variant sm:inline">
               {user.email}
