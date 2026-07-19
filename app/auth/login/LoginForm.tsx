@@ -26,7 +26,7 @@ export default function LoginForm() {
 
   async function handleGoogle() {
     if (!configured) {
-      setMessage("Add Supabase keys to .env.local to enable auth.");
+      setMessage("Start local Supabase first (see README Auth section).");
       return;
     }
     setLoading(true);
@@ -39,7 +39,11 @@ export default function LoginForm() {
       },
     });
     if (error) {
-      setMessage(error.message);
+      setMessage(
+        error.message.includes("provider is not enabled")
+          ? "Google OAuth is not enabled yet. Use email/password for now."
+          : error.message,
+      );
       setLoading(false);
     }
   }
@@ -47,7 +51,7 @@ export default function LoginForm() {
   async function handleEmail(e: FormEvent) {
     e.preventDefault();
     if (!configured) {
-      setMessage("Add Supabase keys to .env.local to enable auth.");
+      setMessage("Start local Supabase first (see README Auth section).");
       return;
     }
     setLoading(true);
@@ -55,19 +59,29 @@ export default function LoginForm() {
     const supabase = createClient();
 
     if (mode === "signup") {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
         },
       });
-      setLoading(false);
       if (error) {
+        setLoading(false);
         setMessage(error.message);
         return;
       }
-      setMessage("Check your email to confirm your account.");
+      // Local Supabase has email confirmations off → session is returned immediately
+      if (data.session) {
+        router.push(next);
+        router.refresh();
+        return;
+      }
+      setLoading(false);
+      setMessage(
+        "Account created. If email confirmation is on, check Inbucket (http://127.0.0.1:54324) then sign in.",
+      );
+      setMode("signin");
       return;
     }
 
@@ -98,28 +112,35 @@ export default function LoginForm() {
 
       {!configured && (
         <div className="mt-4 space-y-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-3 text-body-sm text-amber-900">
-          <p>
-            Local mode — Supabase is not configured. You can use the app without
-            sign-in.
-          </p>
-          <Link
-            href="/dashboard"
-            className="inline-flex rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-on-primary"
-          >
-            Continue to dashboard →
-          </Link>
+          <p className="font-medium">Supabase Auth is not connected yet.</p>
+          <ol className="list-decimal space-y-1 pl-4 text-xs">
+            <li>Install Docker Desktop and start it</li>
+            <li>
+              Run <code className="rounded bg-white/70 px-1">npx supabase start</code>
+            </li>
+            <li>
+              Run{" "}
+              <code className="rounded bg-white/70 px-1">
+                npm run supabase:env
+              </code>
+            </li>
+            <li>Restart the Next.js server</li>
+          </ol>
         </div>
       )}
 
       <button
         type="button"
         onClick={handleGoogle}
-        disabled={loading}
+        disabled={loading || !configured}
         className="mt-8 flex w-full items-center justify-center gap-2 rounded-xl border border-outline-variant bg-white py-3 text-body-md font-medium text-on-surface transition-colors hover:bg-surface-container-low active:scale-[0.98] disabled:opacity-60"
       >
         <Icon name="login" className="text-primary" />
         Continue with Google
       </button>
+      <p className="mt-2 text-center text-[11px] text-outline">
+        Google needs extra OAuth setup — use email/password first.
+      </p>
 
       <div className="my-6 flex items-center gap-3">
         <div className="h-px flex-1 bg-outline-variant" />
@@ -140,7 +161,8 @@ export default function LoginForm() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@company.com"
-            className="w-full rounded-lg border border-outline-variant bg-surface-container-low px-3 py-2.5 text-body-md outline-none transition-all focus:ring-2 focus:ring-primary"
+            disabled={!configured}
+            className="w-full rounded-lg border border-outline-variant bg-surface-container-low px-3 py-2.5 text-body-md outline-none transition-all focus:ring-2 focus:ring-primary disabled:opacity-60"
           />
         </div>
         <div>
@@ -154,12 +176,13 @@ export default function LoginForm() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
-            className="w-full rounded-lg border border-outline-variant bg-surface-container-low px-3 py-2.5 text-body-md outline-none transition-all focus:ring-2 focus:ring-primary"
+            disabled={!configured}
+            className="w-full rounded-lg border border-outline-variant bg-surface-container-low px-3 py-2.5 text-body-md outline-none transition-all focus:ring-2 focus:ring-primary disabled:opacity-60"
           />
         </div>
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || !configured}
           className="flex w-full items-center justify-center rounded-xl bg-primary py-3 font-semibold text-on-primary transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-60"
         >
           {loading

@@ -29,7 +29,38 @@ npm run dev
 | Dashboard | http://localhost:3000/dashboard |
 | Chat | http://localhost:3000/chat/[docId] |
 
-Without Supabase configured, the app runs in **local mode** (fixed `dev@docbot.local` user). Free tier: 3 documents.
+Without Supabase configured, the app runs in **local mode** (fixed `dev@docbot.local` user). Free tier: unlimited while billing is off.
+
+## Auth (local Supabase + Docker)
+
+Requires **Docker Desktop** running on your Mac.
+
+```bash
+# 1) Install Docker Desktop → open the app (whale icon in menu bar)
+#    https://www.docker.com/products/docker-desktop/
+
+# 2) Start local Supabase stack (API :54321, DB :54322, Studio :54323)
+npm run supabase:start
+
+# 3) Write keys into .env.local (keeps Gemini/Pinecone)
+npm run supabase:env
+
+# 4) Push Prisma tables into local Postgres
+npx prisma db push
+
+# 5) Restart Next
+# Ctrl+C then:
+npm run dev
+```
+
+Then open http://localhost:3000/auth/login → **Sign Up** with email + password (confirmations are off locally).
+
+Useful URLs:
+- Studio: http://127.0.0.1:54323  
+- Email inbox (Inbucket): http://127.0.0.1:54324  
+- Stop stack: `npm run supabase:stop`
+
+Google OAuth is optional later (enable provider in Studio + Google Cloud console).
 
 ## Environment
 
