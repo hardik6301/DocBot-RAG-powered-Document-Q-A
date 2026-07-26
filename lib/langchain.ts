@@ -35,8 +35,10 @@ export async function loadDocumentFile(
 
 async function loadPdf(absPath: string): Promise<LoadedPage[]> {
   const buffer = await fs.readFile(absPath);
+  // Worker must load before pdf-parse so Node gets DOMMatrix via @napi-rs/canvas.
+  const { CanvasFactory } = await import("pdf-parse/worker");
   const { PDFParse } = await import("pdf-parse");
-  const parser = new PDFParse({ data: buffer });
+  const parser = new PDFParse({ data: buffer, CanvasFactory });
   const textResult = await parser.getText();
   const info = await parser.getInfo().catch(() => null);
   await parser.destroy().catch(() => undefined);

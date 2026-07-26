@@ -5,7 +5,8 @@ const nextConfig = {
     unoptimized: false,
   },
   experimental: {
-    serverComponentsExternalPackages: ["pdf-parse"],
+    // Keep native canvas + pdf-parse out of the webpack bundle (Vercel/Node).
+    serverComponentsExternalPackages: ["pdf-parse", "@napi-rs/canvas"],
   },
 };
 
