@@ -6,6 +6,7 @@ import { listDocuments } from "@/lib/documents/store";
 export const runtime = "nodejs";
 
 export async function GET() {
+  try {
   const user = await requireUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -91,4 +92,11 @@ export async function GET() {
     byDocument,
     recent,
   });
+  } catch (e) {
+    console.error("GET /api/analytics failed", e);
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : "Failed to load analytics" },
+      { status: 500 },
+    );
+  }
 }

@@ -1,4 +1,4 @@
-import { Pinecone } from "@pinecone-database/pinecone";
+import { Pinecone, type Index } from "@pinecone-database/pinecone";
 
 const EMBED_DIM = 768;
 
@@ -12,6 +12,11 @@ export type ChunkRecord = {
     docId: string;
     userId: string;
   };
+};
+
+const globalForPinecone = globalThis as unknown as {
+  pineconeIndex?: Index;
+  pineconeEnsurePromise?: Promise<Index>;
 };
 
 function getPinecone() {
@@ -30,31 +35,57 @@ export function isPineconeConfigured() {
   return Boolean(process.env.PINECONE_API_KEY?.trim());
 }
 
-/** Ensure serverless index exists (768-dim cosine). */
+/**
+ * Return the index handle. Assumes the index already exists in production.
+ * Avoids listIndexes() on every request (was a major latency source).
+ */
 export async function ensureIndex() {
-  const pc = getPinecone();
-  const name = indexName();
-  const list = await pc.listIndexes();
-  const exists = list.indexes?.some((i) => i.name === name);
-  if (!exists) {
-    await pc.createIndex({
-      name,
-      dimension: EMBED_DIM,
-      metric: "cosine",
-      spec: {
-        serverless: {
-          cloud: "aws",
-          region: "us-east-1",
-        },
-      },
-    });
-    for (let i = 0; i < 30; i++) {
-      const desc = await pc.describeIndex(name);
-      if (desc.status?.ready) break;
-      await new Promise((r) => setTimeout(r, 2000));
-    }
+  if (globalForPinecone.pineconeIndex) {
+    return globalForPinecone.pineconeIndex;
   }
-  return pc.index({ name });
+  if (globalForPinecone.pineconeEnsurePromise) {
+    return globalForPinecone.pineconeEnsurePromise;
+  }
+
+  globalForPinecone.pineconeEnsurePromise = (async () => {
+    const pc = getPinecone();
+    const name = indexName();
+
+    // Dev / first-run only: create if missing. Production skips the round-trip
+    // unless explicitly requested.
+    if (process.env.PINECONE_AUTO_CREATE === "1") {
+      const list = await pc.listIndexes();
+      const exists = list.indexes?.some((i) => i.name === name);
+      if (!exists) {
+        await pc.createIndex({
+          name,
+          dimension: EMBED_DIM,
+          metric: "cosine",
+          spec: {
+            serverless: {
+              cloud: "aws",
+              region: "us-east-1",
+            },
+          },
+        });
+        for (let i = 0; i < 30; i++) {
+          const desc = await pc.describeIndex(name);
+          if (desc.status?.ready) break;
+          await new Promise((r) => setTimeout(r, 2000));
+        }
+      }
+    }
+
+    const index = pc.index(name);
+    globalForPinecone.pineconeIndex = index;
+    return index;
+  })();
+
+  try {
+    return await globalForPinecone.pineconeEnsurePromise;
+  } finally {
+    globalForPinecone.pineconeEnsurePromise = undefined;
+  }
 }
 
 export async function upsertChunks(

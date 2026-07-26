@@ -10,11 +10,14 @@ function withAccess(isPro: boolean): boolean {
   return BILLING_ENABLED ? isPro : true;
 }
 
-function fromAuthUser(authUser: {
-  id: string;
-  email: string;
-  user_metadata?: Record<string, unknown>;
-}, isPro: boolean): AppUser {
+function fromAuthUser(
+  authUser: {
+    id: string;
+    email: string;
+    user_metadata?: Record<string, unknown>;
+  },
+  isPro: boolean,
+): AppUser {
   return {
     id: authUser.id,
     supabaseId: authUser.id,
@@ -29,10 +32,27 @@ function fromAuthUser(authUser: {
   };
 }
 
+function toAppUser(user: {
+  id: string;
+  supabaseId: string;
+  email: string;
+  fullName: string | null;
+  avatarUrl: string | null;
+  isPro: boolean;
+}): AppUser {
+  return {
+    id: user.id,
+    supabaseId: user.supabaseId,
+    email: user.email,
+    fullName: user.fullName,
+    avatarUrl: user.avatarUrl,
+    isPro: withAccess(user.isPro),
+  };
+}
+
 /**
  * Resolve current app user.
- * Local mode (no Supabase): fixed dev user.
- * Supabase: session user; Prisma upsert when DATABASE_URL works.
+ * Fast path: read existing Prisma row (no upsert) on every request.
  */
 export async function requireUser(): Promise<AppUser | null> {
   if (!isSupabaseConfigured()) {
@@ -50,10 +70,9 @@ export async function requireUser(): Promise<AppUser | null> {
 
     if (!authUser?.email) return null;
 
-    const { getLocalSettings } = await import("@/lib/settings");
-    const settings = await getLocalSettings();
-
     if (!isDatabaseConfigured()) {
+      const { getLocalSettings } = await import("@/lib/settings");
+      const settings = await getLocalSettings();
       return fromAuthUser(
         {
           id: authUser.id,
@@ -64,75 +83,51 @@ export async function requireUser(): Promise<AppUser | null> {
       );
     }
 
-    try {
-      const prisma = (await import("@/lib/prisma")).default;
-      const user = await prisma.user.upsert({
-        where: { supabaseId: authUser.id },
-        update: {
-          email: authUser.email,
-          fullName:
-            (authUser.user_metadata?.full_name as string | undefined) ??
-            (authUser.user_metadata?.name as string | undefined) ??
-            undefined,
-          avatarUrl:
-            (authUser.user_metadata?.avatar_url as string | undefined) ??
-            undefined,
-        },
-        create: {
-          supabaseId: authUser.id,
-          email: authUser.email,
-          fullName:
-            (authUser.user_metadata?.full_name as string | undefined) ??
-            (authUser.user_metadata?.name as string | undefined) ??
-            null,
-          avatarUrl:
-            (authUser.user_metadata?.avatar_url as string | undefined) ??
-            null,
-        },
-      });
+    const prisma = (await import("@/lib/prisma")).default;
+    const fullName =
+      (authUser.user_metadata?.full_name as string | undefined) ??
+      (authUser.user_metadata?.name as string | undefined) ??
+      null;
+    const avatarUrl =
+      (authUser.user_metadata?.avatar_url as string | undefined) ?? null;
 
-      return {
-        id: user.id,
-        supabaseId: user.supabaseId,
-        email: user.email,
-        fullName: user.fullName,
-        avatarUrl: user.avatarUrl,
-        isPro: withAccess(user.isPro),
-      };
-    } catch (dbError) {
-      console.error(
-        "requireUser: database upsert failed; trying read-only lookup",
-        dbError,
-      );
-      // Prefer existing Prisma user id so documents don't "disappear"
-      // when upsert flakes but the row already exists.
-      try {
-        const prisma = (await import("@/lib/prisma")).default;
-        const existing = await prisma.user.findUnique({
-          where: { supabaseId: authUser.id },
+    // Hot path: findUnique is much cheaper than upsert on every API call.
+    const existing = await prisma.user.findUnique({
+      where: { supabaseId: authUser.id },
+    });
+
+    if (existing) {
+      const needsSync =
+        existing.email !== authUser.email ||
+        (fullName && existing.fullName !== fullName) ||
+        (avatarUrl && existing.avatarUrl !== avatarUrl);
+
+      if (needsSync) {
+        // Fire-and-forget style: update without blocking the response path
+        // only when something actually changed — still awaited but rare.
+        const updated = await prisma.user.update({
+          where: { id: existing.id },
+          data: {
+            email: authUser.email,
+            ...(fullName ? { fullName } : {}),
+            ...(avatarUrl ? { avatarUrl } : {}),
+          },
         });
-        if (existing) {
-          return {
-            id: existing.id,
-            supabaseId: existing.supabaseId,
-            email: existing.email,
-            fullName: existing.fullName,
-            avatarUrl: existing.avatarUrl,
-            isPro: withAccess(existing.isPro),
-          };
-        }
-      } catch (lookupError) {
-        console.error("requireUser: read-only lookup failed", lookupError);
+        return toAppUser(updated);
       }
-      return fromAuthUser(
-        {
-          id: authUser.id,
-          email: authUser.email,
-          user_metadata: authUser.user_metadata,
-        },
-        settings.isPro,
-      );
+
+      return toAppUser(existing);
     }
+
+    const created = await prisma.user.create({
+      data: {
+        supabaseId: authUser.id,
+        email: authUser.email,
+        fullName,
+        avatarUrl,
+      },
+    });
+    return toAppUser(created);
   } catch (e) {
     console.error("requireUser failed", e);
     return null;

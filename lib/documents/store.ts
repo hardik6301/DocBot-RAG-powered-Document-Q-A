@@ -69,13 +69,13 @@ async function pineconeNamespacesFor(userId: string): Promise<string[]> {
   const ns = new Set<string>([userId]);
   if (useDurableDb()) {
     try {
+      const { resolveOwnerId } = await import("@/lib/documents/prisma-store");
       const prisma = (await import("@/lib/prisma")).default;
-      const owner = await prisma.user.findFirst({
-        where: { OR: [{ id: userId }, { supabaseId: userId }] },
-      });
-      if (owner) {
-        ns.add(owner.id);
-        ns.add(owner.supabaseId);
+      const ownerId = await resolveOwnerId(userId);
+      if (ownerId) {
+        ns.add(ownerId);
+        const owner = await prisma.user.findUnique({ where: { id: ownerId } });
+        if (owner?.supabaseId) ns.add(owner.supabaseId);
       }
     } catch {
       // ignore

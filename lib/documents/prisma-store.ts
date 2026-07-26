@@ -33,21 +33,31 @@ function toApp(doc: {
 
 /** Map Prisma User.id or Supabase auth id → stable Prisma User.id */
 export async function resolveOwnerId(userId: string): Promise<string | null> {
-  const owner = await prisma.user.findFirst({
-    where: { OR: [{ id: userId }, { supabaseId: userId }] },
+  // Prefer PK lookup (fast) before supabaseId unique lookup.
+  const byId = await prisma.user.findUnique({ where: { id: userId } });
+  if (byId) return byId.id;
+  const bySupabase = await prisma.user.findUnique({
+    where: { supabaseId: userId },
   });
-  return owner?.id ?? null;
+  return bySupabase?.id ?? null;
 }
 
 async function ownerFilter(userId: string) {
-  const owner = await prisma.user.findFirst({
-    where: { OR: [{ id: userId }, { supabaseId: userId }] },
+  const byId = await prisma.user.findUnique({ where: { id: userId } });
+  if (byId) {
+    return {
+      OR: [{ userId: byId.id }, { userId: byId.supabaseId }],
+    };
+  }
+  const bySupabase = await prisma.user.findUnique({
+    where: { supabaseId: userId },
   });
-  if (!owner) return { userId };
-  // Include legacy rows accidentally stored under the Supabase UUID.
-  return {
-    OR: [{ userId: owner.id }, { userId: owner.supabaseId }],
-  };
+  if (bySupabase) {
+    return {
+      OR: [{ userId: bySupabase.id }, { userId: bySupabase.supabaseId }],
+    };
+  }
+  return { userId };
 }
 
 export async function dbListDocuments(userId: string): Promise<AppDocument[]> {

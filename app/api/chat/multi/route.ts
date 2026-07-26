@@ -17,22 +17,33 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 export async function GET() {
-  const user = await requireUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-  if (!user.isPro) {
+  try {
+    const user = await requireUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (!user.isPro) {
+      return NextResponse.json(
+        { error: "Multi-document Q&A is a Pro feature." },
+        { status: 403 },
+      );
+    }
+
+    const [messages, allDocs] = await Promise.all([
+      listMessages(MULTI_DOC_CHAT_ID, user.id),
+      listDocuments(user.id),
+    ]);
+    const documents = allDocs.filter(
+      (d) => d.status === "ready" && (d.chunkCount ?? 0) > 0,
+    );
+    return NextResponse.json({ messages, documents });
+  } catch (e) {
+    console.error("GET /api/chat/multi failed", e);
     return NextResponse.json(
-      { error: "Multi-document Q&A is a Pro feature." },
-      { status: 403 },
+      { error: e instanceof Error ? e.message : "Failed to load multi-doc" },
+      { status: 500 },
     );
   }
-
-  const messages = await listMessages(MULTI_DOC_CHAT_ID, user.id);
-  const documents = (await listDocuments(user.id)).filter(
-    (d) => d.status === "ready" && (d.chunkCount ?? 0) > 0,
-  );
-  return NextResponse.json({ messages, documents });
 }
 
 export async function POST(request: Request) {
