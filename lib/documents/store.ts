@@ -12,7 +12,6 @@ import {
   pineconeUpsertDocument,
 } from "@/lib/documents/pinecone-meta";
 import {
-  dbCountDocuments,
   dbCreateDocument,
   dbDeleteDocument,
   dbGetDocument,
@@ -43,51 +42,107 @@ async function writeStore(store: StoreShape) {
   await fs.writeFile(DATA_FILE(), JSON.stringify(store, null, 2));
 }
 
-async function preferPineconeMeta() {
-  if (useDurableDb()) return false;
-  return (
-    isPineconeConfigured() &&
-    (isVercelRuntime() || process.env.USE_PINECONE_DOCS === "1")
+/** Keep one card per filename+size (newest ready wins). */
+function dedupeDocuments(docs: AppDocument[]): AppDocument[] {
+  const byKey = new Map<string, AppDocument>();
+
+  for (const doc of docs) {
+    const key = `${doc.filename.toLowerCase()}::${doc.fileSize ?? 0}`;
+    const prev = byKey.get(key);
+    if (!prev) {
+      byKey.set(key, doc);
+      continue;
+    }
+    const rank = (d: AppDocument) =>
+      (d.status === "ready" ? 1e15 : 0) + new Date(d.createdAt).getTime();
+    if (rank(doc) >= rank(prev)) byKey.set(key, doc);
+  }
+
+  return Array.from(byKey.values()).sort(
+    (a, b) =>
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
   );
 }
 
-async function listDocumentsFallback(userId: string): Promise<AppDocument[]> {
-  if (await preferPineconeMeta()) {
+async function pineconeNamespacesFor(userId: string): Promise<string[]> {
+  const ns = new Set<string>([userId]);
+  if (useDurableDb()) {
     try {
-      const remote = await pineconeListDocuments(userId);
-      if (remote.length) return remote;
-    } catch (e) {
-      console.error("pinecone list documents failed", e);
-    }
-  }
-  if (isVercelRuntime()) {
-    // Ephemeral FS on Vercel — prefer empty over crashing when DB is down.
-    try {
-      return await pineconeListDocuments(userId);
+      const prisma = (await import("@/lib/prisma")).default;
+      const owner = await prisma.user.findFirst({
+        where: { OR: [{ id: userId }, { supabaseId: userId }] },
+      });
+      if (owner) {
+        ns.add(owner.id);
+        ns.add(owner.supabaseId);
+      }
     } catch {
-      return [];
+      // ignore
     }
   }
-  const store = await ensureStore();
-  return store.documents
-    .filter((d) => d.userId === userId)
-    .sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    );
+  return Array.from(ns);
+}
+
+async function pineconeGetFromAnyNs(
+  id: string,
+  userId: string,
+): Promise<AppDocument | null> {
+  if (!isPineconeConfigured()) return null;
+  for (const ns of await pineconeNamespacesFor(userId)) {
+    try {
+      const doc = await pineconeGetDocument(id, ns);
+      if (doc) return doc;
+    } catch (e) {
+      console.error("pinecone get failed", ns, e);
+    }
+  }
+  return null;
+}
+
+async function pineconeListFromAnyNs(userId: string): Promise<AppDocument[]> {
+  if (!isPineconeConfigured()) return [];
+  const byId = new Map<string, AppDocument>();
+  for (const ns of await pineconeNamespacesFor(userId)) {
+    try {
+      for (const doc of await pineconeListDocuments(ns)) {
+        byId.set(doc.id, doc);
+      }
+    } catch (e) {
+      console.error("pinecone list failed", ns, e);
+    }
+  }
+  return Array.from(byId.values());
 }
 
 export async function listDocuments(userId: string): Promise<AppDocument[]> {
+  const byId = new Map<string, AppDocument>();
+
   if (useDurableDb()) {
     try {
-      return await dbListDocuments(userId);
+      for (const doc of await dbListDocuments(userId)) {
+        byId.set(doc.id, doc);
+      }
     } catch (e) {
       console.error("db list documents failed; falling back", e);
-      return listDocumentsFallback(userId);
     }
   }
 
-  return listDocumentsFallback(userId);
+  // Merge Pinecone meta only when DB empty/unavailable — avoids duplicate cards
+  // from dual-writes, but still recovers UUID docs if Postgres flakes.
+  if (byId.size === 0) {
+    for (const doc of await pineconeListFromAnyNs(userId)) {
+      byId.set(doc.id, doc);
+    }
+  }
+
+  if (byId.size === 0 && !isVercelRuntime()) {
+    const store = await ensureStore();
+    for (const doc of store.documents.filter((d) => d.userId === userId)) {
+      byId.set(doc.id, doc);
+    }
+  }
+
+  return dedupeDocuments(Array.from(byId.values()));
 }
 
 export async function getDocument(
@@ -96,22 +151,25 @@ export async function getDocument(
 ): Promise<AppDocument | null> {
   if (useDurableDb()) {
     try {
-      return await dbGetDocument(id, userId);
+      const doc = await dbGetDocument(id, userId);
+      if (doc) return doc;
     } catch (e) {
       console.error("db get document failed; falling back", e);
     }
   }
 
-  if (await preferPineconeMeta()) {
-    try {
-      const remote = await pineconeGetDocument(id, userId);
-      if (remote) return remote;
-    } catch (e) {
-      console.error("pinecone get document failed", e);
-    }
+  // Critical: chat 404s happened because UUID meta docs were listed from
+  // Pinecone while getDocument only checked Postgres.
+  const remote = await pineconeGetFromAnyNs(id, userId);
+  if (remote) return remote;
+
+  if (!isVercelRuntime()) {
+    const store = await ensureStore();
+    return (
+      store.documents.find((d) => d.id === id && d.userId === userId) ?? null
+    );
   }
-  const store = await ensureStore();
-  return store.documents.find((d) => d.id === id && d.userId === userId) ?? null;
+  return null;
 }
 
 export async function createDocument(
@@ -119,6 +177,7 @@ export async function createDocument(
 ): Promise<AppDocument> {
   if (useDurableDb()) {
     try {
+      // Postgres only — do not also write Pinecone meta (that caused 2× cards).
       return await dbCreateDocument(input);
     } catch (e) {
       console.error("db create document failed; falling back", e);
@@ -163,10 +222,12 @@ export async function updateDocument(
   >,
 ): Promise<AppDocument | null> {
   let updated: AppDocument | null = null;
+  let fromDb = false;
 
   if (useDurableDb()) {
     try {
       updated = await dbUpdateDocument(id, userId, patch);
+      if (updated) fromDb = true;
     } catch (e) {
       console.error("db update document failed; falling back", e);
     }
@@ -188,10 +249,9 @@ export async function updateDocument(
     }
   }
 
-  // Prefer Pinecone meta when DB miss (or durable DB returned null).
   if (!updated && isPineconeConfigured()) {
     try {
-      const existing = await pineconeGetDocument(id, userId);
+      const existing = await pineconeGetFromAnyNs(id, userId);
       if (existing) {
         updated = {
           ...existing,
@@ -204,7 +264,8 @@ export async function updateDocument(
     }
   }
 
-  if (updated && isPineconeConfigured()) {
+  // Only mirror meta to Pinecone when Postgres is not the source of truth.
+  if (updated && isPineconeConfigured() && !fromDb) {
     try {
       await pineconeUpsertDocument(updated);
     } catch (e) {
@@ -218,16 +279,17 @@ export async function deleteDocument(
   id: string,
   userId: string,
 ): Promise<AppDocument | null> {
+  let removed: AppDocument | null = null;
+
   if (useDurableDb()) {
     try {
-      return await dbDeleteDocument(id, userId);
+      removed = await dbDeleteDocument(id, userId);
     } catch (e) {
       console.error("db delete document failed; falling back", e);
     }
   }
 
-  let removed: AppDocument | null = null;
-  if (!isVercelRuntime()) {
+  if (!removed && !isVercelRuntime()) {
     const store = await ensureStore();
     const idx = store.documents.findIndex(
       (d) => d.id === id && d.userId === userId,
@@ -237,27 +299,25 @@ export async function deleteDocument(
       await writeStore(store);
     }
   }
+
   if (!removed) {
-    removed = await pineconeGetDocument(id, userId);
+    removed = await pineconeGetFromAnyNs(id, userId);
   }
-  if (removed && isPineconeConfigured()) {
-    try {
-      await pineconeDeleteDocument(id, userId);
-    } catch (e) {
-      console.error("pinecone delete document meta failed", e);
+
+  // Clean both namespaces so ghosts don't reappear.
+  if (isPineconeConfigured()) {
+    for (const ns of await pineconeNamespacesFor(userId)) {
+      try {
+        await pineconeDeleteDocument(id, ns);
+      } catch (e) {
+        console.error("pinecone delete document failed", ns, e);
+      }
     }
   }
   return removed;
 }
 
 export async function countDocuments(userId: string): Promise<number> {
-  if (useDurableDb()) {
-    try {
-      return await dbCountDocuments(userId);
-    } catch (e) {
-      console.error("db count documents failed; falling back", e);
-    }
-  }
   const docs = await listDocuments(userId);
   return docs.length;
 }
