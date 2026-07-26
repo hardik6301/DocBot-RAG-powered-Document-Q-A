@@ -43,8 +43,15 @@ export function useDocuments() {
         const res = await fetch("/api/upload", { method: "POST", body });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Upload failed");
+        const uploaded = data.document as AppDocument | undefined;
+        if (uploaded) {
+          setDocuments((prev) => [
+            uploaded,
+            ...prev.filter((d) => d.id !== uploaded.id),
+          ]);
+        }
         await refresh();
-        return data.document as AppDocument;
+        return uploaded as AppDocument;
       } catch (e) {
         const msg = e instanceof Error ? e.message : "Upload failed";
         setError(msg);

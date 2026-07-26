@@ -82,7 +82,25 @@ export async function dbUpdateDocument(
   >,
 ): Promise<AppDocument | null> {
   const existing = await prisma.document.findFirst({ where: { id, userId } });
-  if (!existing) return null;
+  if (existing) {
+    const row = await prisma.document.update({
+      where: { id },
+      data: patch,
+    });
+    return toApp(row);
+  }
+
+  // Ownership via User.id OR User.supabaseId (auth fallback used supabase UUID).
+  const owner = await prisma.user.findFirst({
+    where: { OR: [{ id: userId }, { supabaseId: userId }] },
+  });
+  if (!owner) return null;
+
+  const owned = await prisma.document.findFirst({
+    where: { id, userId: owner.id },
+  });
+  if (!owned) return null;
+
   const row = await prisma.document.update({
     where: { id },
     data: patch,

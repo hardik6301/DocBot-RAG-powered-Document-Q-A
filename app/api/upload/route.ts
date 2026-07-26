@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
-import { BILLING_ENABLED, FREE_TIER_LIMIT } from "@/lib/config";
+import {
+  BILLING_ENABLED,
+  FREE_TIER_LIMIT,
+  useDurableDb,
+} from "@/lib/config";
 import {
   countDocuments,
   createDocument,
@@ -82,13 +86,41 @@ export async function POST(request: Request) {
       fileType,
     });
 
-    const ready = await updateDocument(doc.id, user.id, {
-      status: "ready",
+    const patch = {
+      status: "ready" as const,
       pageCount: result.pageCount,
       chunkCount: result.chunkCount,
-    });
+    };
 
-    return NextResponse.json({ document: ready ?? doc }, { status: 201 });
+    let ready = await updateDocument(doc.id, user.id, patch);
+
+    // Direct write by primary key — avoids stuck "processing" if userId lookup misses.
+    if (!ready && useDurableDb()) {
+      try {
+        const prisma = (await import("@/lib/prisma")).default;
+        const row = await prisma.document.update({
+          where: { id: doc.id },
+          data: patch,
+        });
+        ready = {
+          ...doc,
+          status: row.status as "ready",
+          pageCount: row.pageCount,
+          chunkCount: row.chunkCount,
+          updatedAt: row.updatedAt.toISOString(),
+        };
+      } catch (e) {
+        console.error("direct ready status update failed", e);
+      }
+    }
+
+    const document = ready ?? {
+      ...doc,
+      ...patch,
+      updatedAt: new Date().toISOString(),
+    };
+
+    return NextResponse.json({ document }, { status: 201 });
   } catch (e) {
     console.error("upload/ingest failed", e);
     const message = e instanceof Error ? e.message : "Upload failed";

@@ -162,17 +162,17 @@ export async function updateDocument(
     >
   >,
 ): Promise<AppDocument | null> {
+  let updated: AppDocument | null = null;
+
   if (useDurableDb()) {
     try {
-      return await dbUpdateDocument(id, userId, patch);
+      updated = await dbUpdateDocument(id, userId, patch);
     } catch (e) {
       console.error("db update document failed; falling back", e);
     }
   }
 
-  let updated: AppDocument | null = null;
-
-  if (!isVercelRuntime()) {
+  if (!updated && !isVercelRuntime()) {
     const store = await ensureStore();
     const idx = store.documents.findIndex(
       (d) => d.id === id && d.userId === userId,
@@ -188,14 +188,20 @@ export async function updateDocument(
     }
   }
 
-  if (!updated && (await preferPineconeMeta())) {
-    const existing = await pineconeGetDocument(id, userId);
-    if (!existing) return null;
-    updated = {
-      ...existing,
-      ...patch,
-      updatedAt: new Date().toISOString(),
-    };
+  // Prefer Pinecone meta when DB miss (or durable DB returned null).
+  if (!updated && isPineconeConfigured()) {
+    try {
+      const existing = await pineconeGetDocument(id, userId);
+      if (existing) {
+        updated = {
+          ...existing,
+          ...patch,
+          updatedAt: new Date().toISOString(),
+        };
+      }
+    } catch (e) {
+      console.error("pinecone get document for update failed", e);
+    }
   }
 
   if (updated && isPineconeConfigured()) {
