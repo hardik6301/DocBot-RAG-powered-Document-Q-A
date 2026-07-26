@@ -89,7 +89,8 @@ export async function POST(request: Request) {
   try {
     const question = body.question.trim();
     const vector = await embedQuery(question);
-    const matches = await querySimilar(user.id, vector, 5, doc.id);
+    const namespace = doc.pineconeNs || user.supabaseId || user.id;
+    const matches = await querySimilar(namespace, vector, 5, doc.id);
     const usable = matches.filter((m) => m.chunkText && m.score > 0.15);
 
     let answer: string;

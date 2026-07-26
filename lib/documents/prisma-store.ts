@@ -31,28 +31,60 @@ function toApp(doc: {
   };
 }
 
+/** Map Prisma User.id or Supabase auth id → stable Prisma User.id */
+export async function resolveOwnerId(userId: string): Promise<string | null> {
+  const owner = await prisma.user.findFirst({
+    where: { OR: [{ id: userId }, { supabaseId: userId }] },
+  });
+  return owner?.id ?? null;
+}
+
+async function ownerFilter(userId: string) {
+  const owner = await prisma.user.findFirst({
+    where: { OR: [{ id: userId }, { supabaseId: userId }] },
+  });
+  if (!owner) return { userId };
+  // Include legacy rows accidentally stored under the Supabase UUID.
+  return {
+    OR: [{ userId: owner.id }, { userId: owner.supabaseId }],
+  };
+}
+
 export async function dbListDocuments(userId: string): Promise<AppDocument[]> {
+  const where = await ownerFilter(userId);
   const rows = await prisma.document.findMany({
-    where: { userId },
+    where,
     orderBy: { createdAt: "desc" },
   });
-  return rows.map(toApp);
+  // Dedupe by id (should already be unique).
+  const seen = new Set<string>();
+  return rows
+    .map(toApp)
+    .filter((d) => {
+      if (seen.has(d.id)) return false;
+      seen.add(d.id);
+      return true;
+    });
 }
 
 export async function dbGetDocument(
   id: string,
   userId: string,
 ): Promise<AppDocument | null> {
-  const row = await prisma.document.findFirst({ where: { id, userId } });
+  const where = await ownerFilter(userId);
+  const row = await prisma.document.findFirst({
+    where: { id, ...where },
+  });
   return row ? toApp(row) : null;
 }
 
 export async function dbCreateDocument(
   input: Omit<AppDocument, "id" | "createdAt" | "updatedAt">,
 ): Promise<AppDocument> {
+  const ownerId = (await resolveOwnerId(input.userId)) ?? input.userId;
   const row = await prisma.document.create({
     data: {
-      userId: input.userId,
+      userId: ownerId,
       filename: input.filename,
       fileUrl: input.fileUrl,
       fileType: input.fileType,
@@ -81,26 +113,8 @@ export async function dbUpdateDocument(
     >
   >,
 ): Promise<AppDocument | null> {
-  const existing = await prisma.document.findFirst({ where: { id, userId } });
-  if (existing) {
-    const row = await prisma.document.update({
-      where: { id },
-      data: patch,
-    });
-    return toApp(row);
-  }
-
-  // Ownership via User.id OR User.supabaseId (auth fallback used supabase UUID).
-  const owner = await prisma.user.findFirst({
-    where: { OR: [{ id: userId }, { supabaseId: userId }] },
-  });
-  if (!owner) return null;
-
-  const owned = await prisma.document.findFirst({
-    where: { id, userId: owner.id },
-  });
-  if (!owned) return null;
-
+  const existing = await dbGetDocument(id, userId);
+  if (!existing) return null;
   const row = await prisma.document.update({
     where: { id },
     data: patch,
@@ -112,12 +126,13 @@ export async function dbDeleteDocument(
   id: string,
   userId: string,
 ): Promise<AppDocument | null> {
-  const existing = await prisma.document.findFirst({ where: { id, userId } });
+  const existing = await dbGetDocument(id, userId);
   if (!existing) return null;
   await prisma.document.delete({ where: { id } });
-  return toApp(existing);
+  return existing;
 }
 
 export async function dbCountDocuments(userId: string): Promise<number> {
-  return prisma.document.count({ where: { userId } });
+  const where = await ownerFilter(userId);
+  return prisma.document.count({ where });
 }

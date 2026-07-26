@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import Icon from "@/components/ui/Icon";
 
 type Props = {
@@ -12,18 +12,22 @@ type Props = {
 export default function FileUpload({ onUpload, uploading, disabled }: Props) {
   const [dragging, setDragging] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
+  const busyRef = useRef(false);
 
   const handleFiles = useCallback(
     async (files: FileList | null) => {
-      if (!files?.[0] || disabled) return;
+      if (!files?.[0] || disabled || uploading || busyRef.current) return;
+      busyRef.current = true;
       setLocalError(null);
       try {
         await onUpload(files[0]);
       } catch (e) {
         setLocalError(e instanceof Error ? e.message : "Upload failed");
+      } finally {
+        busyRef.current = false;
       }
     },
-    [onUpload, disabled],
+    [onUpload, disabled, uploading],
   );
 
   return (

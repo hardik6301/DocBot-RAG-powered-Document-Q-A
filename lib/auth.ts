@@ -100,12 +100,30 @@ export async function requireUser(): Promise<AppUser | null> {
         isPro: withAccess(user.isPro),
       };
     } catch (dbError) {
-      // Broken DATABASE_URL (e.g. 127.0.0.1 on Vercel) or missing tables —
-      // keep the session user so APIs don't look "Unauthorized".
       console.error(
-        "requireUser: database upsert failed; using auth session user",
+        "requireUser: database upsert failed; trying read-only lookup",
         dbError,
       );
+      // Prefer existing Prisma user id so documents don't "disappear"
+      // when upsert flakes but the row already exists.
+      try {
+        const prisma = (await import("@/lib/prisma")).default;
+        const existing = await prisma.user.findUnique({
+          where: { supabaseId: authUser.id },
+        });
+        if (existing) {
+          return {
+            id: existing.id,
+            supabaseId: existing.supabaseId,
+            email: existing.email,
+            fullName: existing.fullName,
+            avatarUrl: existing.avatarUrl,
+            isPro: withAccess(existing.isPro),
+          };
+        }
+      } catch (lookupError) {
+        console.error("requireUser: read-only lookup failed", lookupError);
+      }
       return fromAuthUser(
         {
           id: authUser.id,

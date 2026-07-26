@@ -1,17 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { AppDocument } from "@/types";
 
 type Usage = { used: number; limit: number | null };
 
 export function useDocuments() {
   const [documents, setDocuments] = useState<AppDocument[]>([]);
-  const [usage, setUsage] = useState<Usage>({ used: 0, limit: 3 });
+  const [usage, setUsage] = useState<Usage>({ used: 0, limit: null });
   const [isPro, setIsPro] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const uploadLock = useRef(false);
 
   const refresh = useCallback(async () => {
     setError(null);
@@ -20,9 +21,10 @@ export function useDocuments() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to load documents");
       setDocuments(data.documents ?? []);
-      setUsage(data.usage ?? { used: 0, limit: 3 });
+      setUsage(data.usage ?? { used: 0, limit: null });
       setIsPro(Boolean(data.isPro));
     } catch (e) {
+      // Keep existing cards if a later fetch flakes (common after chat nav).
       setError(e instanceof Error ? e.message : "Failed to load");
     } finally {
       setLoading(false);
@@ -35,6 +37,8 @@ export function useDocuments() {
 
   const upload = useCallback(
     async (file: File) => {
+      if (uploadLock.current) return undefined as unknown as AppDocument;
+      uploadLock.current = true;
       setUploading(true);
       setError(null);
       try {
@@ -57,6 +61,7 @@ export function useDocuments() {
         setError(msg);
         throw e;
       } finally {
+        uploadLock.current = false;
         setUploading(false);
       }
     },

@@ -65,6 +65,9 @@ export async function POST(request: Request) {
     fileUrl = saved.fileUrl;
     const fileType = detectFileType(file.name);
 
+    // Pinecone namespace must stay stable across Prisma cuid vs auth UUID.
+    const vectorNs = user.supabaseId || user.id;
+
     const doc = await createDocument({
       userId: user.id,
       filename: file.name,
@@ -73,13 +76,13 @@ export async function POST(request: Request) {
       fileSize: saved.size,
       pageCount: null,
       chunkCount: null,
-      pineconeNs: user.id,
+      pineconeNs: vectorNs,
       status: "processing",
     });
     docId = doc.id;
 
     const result = await ingestDocument({
-      userId: user.id,
+      userId: vectorNs,
       docId: doc.id,
       filename: file.name,
       fileUrl: saved.fileUrl,
