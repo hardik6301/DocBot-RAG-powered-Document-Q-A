@@ -33,11 +33,32 @@ export default function ChatPage({ params }: { params: { docId: string } }) {
       try {
         const res = await fetch(
           `/api/chat?documentId=${encodeURIComponent(params.docId)}`,
+          { credentials: "same-origin" },
         );
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Failed to load chat");
-        setDoc(data.document);
-        const history = (data.messages as StoredMessage[]) ?? [];
+        const raw = await res.text();
+        let data: {
+          error?: string;
+          document?: AppDocument;
+          messages?: StoredMessage[];
+        } = {};
+        if (raw) {
+          try {
+            data = JSON.parse(raw) as typeof data;
+          } catch {
+            throw new Error(
+              `Failed to load chat (${res.status}): invalid server response`,
+            );
+          }
+        } else if (!res.ok) {
+          throw new Error(`Failed to load chat (${res.status})`);
+        }
+        if (!res.ok) {
+          throw new Error(
+            data.error || `Failed to load chat (${res.status})`,
+          );
+        }
+        setDoc(data.document ?? null);
+        const history = data.messages ?? [];
         setMessages(history.length ? history : [WELCOME]);
       } catch (e) {
         setLoadError(e instanceof Error ? e.message : "Failed to load");
@@ -73,11 +94,26 @@ export default function ChatPage({ params }: { params: { docId: string } }) {
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
+        credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ documentId: params.docId, question: text }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Chat failed");
+      const raw = await res.text();
+      let data: {
+        error?: string;
+        answer?: string;
+        sources?: SourceCitation[];
+      } = {};
+      if (raw) {
+        try {
+          data = JSON.parse(raw) as typeof data;
+        } catch {
+          throw new Error(`Chat failed (${res.status}): invalid server response`);
+        }
+      } else if (!res.ok) {
+        throw new Error(`Chat failed (${res.status})`);
+      }
+      if (!res.ok) throw new Error(data.error || `Chat failed (${res.status})`);
 
       setMessages((prev) =>
         prev
@@ -86,7 +122,7 @@ export default function ChatPage({ params }: { params: { docId: string } }) {
             id: `assistant-${Date.now()}`,
             role: "assistant",
             content: data.answer as string,
-            sources: (data.sources as SourceCitation[]) ?? [],
+            sources: data.sources ?? [],
             createdAt: new Date().toISOString(),
           }),
       );

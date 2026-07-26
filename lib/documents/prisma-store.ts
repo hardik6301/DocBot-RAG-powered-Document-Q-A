@@ -136,3 +136,46 @@ export async function dbCountDocuments(userId: string): Promise<number> {
   const where = await ownerFilter(userId);
   return prisma.document.count({ where });
 }
+
+/**
+ * Upsert a Pinecone-only / legacy document into Postgres so Chat FKs work.
+ * Preserves the existing document id (UUID or cuid).
+ */
+export async function ensureDocumentPersisted(
+  doc: AppDocument,
+  userId: string,
+): Promise<AppDocument> {
+  const existing = await prisma.document.findUnique({ where: { id: doc.id } });
+  if (existing) return toApp(existing);
+
+  const ownerId = await resolveOwnerId(userId);
+  if (!ownerId) {
+    throw new Error(
+      "User is not synced to the database yet. Sign out and sign in again.",
+    );
+  }
+
+  try {
+    const row = await prisma.document.create({
+      data: {
+        id: doc.id,
+        userId: ownerId,
+        filename: doc.filename,
+        fileUrl: doc.fileUrl,
+        fileType: doc.fileType,
+        fileSize: doc.fileSize,
+        pageCount: doc.pageCount,
+        chunkCount: doc.chunkCount,
+        pineconeNs: doc.pineconeNs || ownerId,
+        status: doc.status,
+        createdAt: new Date(doc.createdAt),
+        updatedAt: new Date(doc.updatedAt),
+      },
+    });
+    return toApp(row);
+  } catch {
+    const again = await prisma.document.findUnique({ where: { id: doc.id } });
+    if (again) return toApp(again);
+    throw new Error("Failed to persist document for chat");
+  }
+}

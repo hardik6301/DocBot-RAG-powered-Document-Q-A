@@ -2,6 +2,7 @@ import type { Prisma } from "@prisma/client";
 import type { SourceCitation, StoredChat, StoredMessage } from "@/types";
 import prisma from "@/lib/prisma";
 import { MULTI_DOC_CHAT_ID } from "@/lib/chat/constants";
+import { resolveOwnerId } from "@/lib/documents/prisma-store";
 
 function mapMessage(m: {
   id: string;
@@ -45,6 +46,16 @@ function mapChat(chat: {
   };
 }
 
+async function ownerIdOrThrow(userId: string) {
+  const ownerId = await resolveOwnerId(userId);
+  if (!ownerId) {
+    throw new Error(
+      "User is not synced to the database yet. Sign out and sign in again.",
+    );
+  }
+  return ownerId;
+}
+
 async function findChat(documentId: string, userId: string) {
   if (documentId === MULTI_DOC_CHAT_ID) {
     return prisma.chat.findFirst({
@@ -62,14 +73,25 @@ export async function dbGetOrCreateChat(
   documentId: string,
   userId: string,
 ): Promise<StoredChat> {
-  const existing = await findChat(documentId, userId);
+  const ownerId = await ownerIdOrThrow(userId);
+  const existing = await findChat(documentId, ownerId);
   if (existing) return mapChat(existing);
+
+  // Document chats require the Document row (FK). Multi-doc does not.
+  if (documentId !== MULTI_DOC_CHAT_ID) {
+    const doc = await prisma.document.findUnique({ where: { id: documentId } });
+    if (!doc) {
+      throw new Error(
+        "Document is not in the database yet. Open it again from the dashboard, or re-upload.",
+      );
+    }
+  }
 
   const created = await prisma.chat.create({
     data:
       documentId === MULTI_DOC_CHAT_ID
-        ? { userId, kind: "multi", documentId: null }
-        : { userId, kind: "document", documentId },
+        ? { userId: ownerId, kind: "multi", documentId: null }
+        : { userId: ownerId, kind: "document", documentId },
     include: { messages: { orderBy: { createdAt: "asc" } } },
   });
   return mapChat(created);
@@ -79,8 +101,13 @@ export async function dbListMessages(
   documentId: string,
   userId: string,
 ): Promise<StoredMessage[]> {
-  const chat = await dbGetOrCreateChat(documentId, userId);
-  return chat.messages;
+  try {
+    const chat = await dbGetOrCreateChat(documentId, userId);
+    return chat.messages;
+  } catch (e) {
+    console.error("dbListMessages failed", e);
+    return [];
+  }
 }
 
 export async function dbAppendMessages(
@@ -118,8 +145,9 @@ export async function dbDeleteChatsForDocument(documentId: string) {
 }
 
 export async function dbListChatsForUser(userId: string): Promise<StoredChat[]> {
+  const ownerId = (await resolveOwnerId(userId)) ?? userId;
   const rows = await prisma.chat.findMany({
-    where: { userId },
+    where: { userId: ownerId },
     include: { messages: { orderBy: { createdAt: "asc" } } },
     orderBy: { updatedAt: "desc" },
   });

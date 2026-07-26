@@ -17,6 +17,7 @@ import {
   dbGetDocument,
   dbListDocuments,
   dbUpdateDocument,
+  ensureDocumentPersisted,
 } from "@/lib/documents/prisma-store";
 
 const DATA_FILE = () => path.join(dataDir(), "documents.json");
@@ -158,10 +159,19 @@ export async function getDocument(
     }
   }
 
-  // Critical: chat 404s happened because UUID meta docs were listed from
-  // Pinecone while getDocument only checked Postgres.
+  // Critical: UUID meta docs live in Pinecone; promote into Postgres so Chat FK works.
   const remote = await pineconeGetFromAnyNs(id, userId);
-  if (remote) return remote;
+  if (remote) {
+    if (useDurableDb()) {
+      try {
+        return await ensureDocumentPersisted(remote, userId);
+      } catch (e) {
+        console.error("persist pinecone document failed", e);
+        return remote;
+      }
+    }
+    return remote;
+  }
 
   if (!isVercelRuntime()) {
     const store = await ensureStore();
