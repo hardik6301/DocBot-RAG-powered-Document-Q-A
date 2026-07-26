@@ -36,11 +36,17 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
+  // Always refresh the session (keeps cookies valid for /api routes too).
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   const path = request.nextUrl.pathname;
+  // Don't redirect API callers — they expect JSON 401s from route handlers.
+  if (path.startsWith("/api")) {
+    return response;
+  }
+
   const isProtected =
     path.startsWith("/dashboard") ||
     path.startsWith("/chat") ||

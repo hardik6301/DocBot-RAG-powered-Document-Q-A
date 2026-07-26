@@ -16,7 +16,7 @@ export function useDocuments() {
   const refresh = useCallback(async () => {
     setError(null);
     try {
-      const res = await fetch("/api/documents");
+      const res = await fetch("/api/documents", { credentials: "same-origin" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to load documents");
       setDocuments(data.documents ?? []);

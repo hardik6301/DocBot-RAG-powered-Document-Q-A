@@ -51,15 +51,21 @@ async function preferPineconeMeta() {
   );
 }
 
-export async function listDocuments(userId: string): Promise<AppDocument[]> {
-  if (useDurableDb()) return dbListDocuments(userId);
-
+async function listDocumentsFallback(userId: string): Promise<AppDocument[]> {
   if (await preferPineconeMeta()) {
     try {
       const remote = await pineconeListDocuments(userId);
       if (remote.length) return remote;
     } catch (e) {
       console.error("pinecone list documents failed", e);
+    }
+  }
+  if (isVercelRuntime()) {
+    // Ephemeral FS on Vercel — prefer empty over crashing when DB is down.
+    try {
+      return await pineconeListDocuments(userId);
+    } catch {
+      return [];
     }
   }
   const store = await ensureStore();
@@ -71,11 +77,30 @@ export async function listDocuments(userId: string): Promise<AppDocument[]> {
     );
 }
 
+export async function listDocuments(userId: string): Promise<AppDocument[]> {
+  if (useDurableDb()) {
+    try {
+      return await dbListDocuments(userId);
+    } catch (e) {
+      console.error("db list documents failed; falling back", e);
+      return listDocumentsFallback(userId);
+    }
+  }
+
+  return listDocumentsFallback(userId);
+}
+
 export async function getDocument(
   id: string,
   userId: string,
 ): Promise<AppDocument | null> {
-  if (useDurableDb()) return dbGetDocument(id, userId);
+  if (useDurableDb()) {
+    try {
+      return await dbGetDocument(id, userId);
+    } catch (e) {
+      console.error("db get document failed; falling back", e);
+    }
+  }
 
   if (await preferPineconeMeta()) {
     try {
@@ -92,9 +117,14 @@ export async function getDocument(
 export async function createDocument(
   input: Omit<AppDocument, "id" | "createdAt" | "updatedAt">,
 ): Promise<AppDocument> {
-  if (useDurableDb()) return dbCreateDocument(input);
+  if (useDurableDb()) {
+    try {
+      return await dbCreateDocument(input);
+    } catch (e) {
+      console.error("db create document failed; falling back", e);
+    }
+  }
 
-  const store = await ensureStore();
   const now = new Date().toISOString();
   const doc: AppDocument = {
     ...input,
@@ -102,8 +132,13 @@ export async function createDocument(
     createdAt: now,
     updatedAt: now,
   };
-  store.documents.push(doc);
-  await writeStore(store);
+
+  if (!isVercelRuntime()) {
+    const store = await ensureStore();
+    store.documents.push(doc);
+    await writeStore(store);
+  }
+
   try {
     if (isPineconeConfigured()) await pineconeUpsertDocument(doc);
   } catch (e) {
@@ -127,23 +162,33 @@ export async function updateDocument(
     >
   >,
 ): Promise<AppDocument | null> {
-  if (useDurableDb()) return dbUpdateDocument(id, userId, patch);
-
-  const store = await ensureStore();
-  const idx = store.documents.findIndex(
-    (d) => d.id === id && d.userId === userId,
-  );
+  if (useDurableDb()) {
+    try {
+      return await dbUpdateDocument(id, userId, patch);
+    } catch (e) {
+      console.error("db update document failed; falling back", e);
+    }
+  }
 
   let updated: AppDocument | null = null;
-  if (idx !== -1) {
-    store.documents[idx] = {
-      ...store.documents[idx],
-      ...patch,
-      updatedAt: new Date().toISOString(),
-    };
-    await writeStore(store);
-    updated = store.documents[idx];
-  } else if (await preferPineconeMeta()) {
+
+  if (!isVercelRuntime()) {
+    const store = await ensureStore();
+    const idx = store.documents.findIndex(
+      (d) => d.id === id && d.userId === userId,
+    );
+    if (idx !== -1) {
+      store.documents[idx] = {
+        ...store.documents[idx],
+        ...patch,
+        updatedAt: new Date().toISOString(),
+      };
+      await writeStore(store);
+      updated = store.documents[idx];
+    }
+  }
+
+  if (!updated && (await preferPineconeMeta())) {
     const existing = await pineconeGetDocument(id, userId);
     if (!existing) return null;
     updated = {
@@ -167,17 +212,26 @@ export async function deleteDocument(
   id: string,
   userId: string,
 ): Promise<AppDocument | null> {
-  if (useDurableDb()) return dbDeleteDocument(id, userId);
+  if (useDurableDb()) {
+    try {
+      return await dbDeleteDocument(id, userId);
+    } catch (e) {
+      console.error("db delete document failed; falling back", e);
+    }
+  }
 
-  const store = await ensureStore();
-  const idx = store.documents.findIndex(
-    (d) => d.id === id && d.userId === userId,
-  );
   let removed: AppDocument | null = null;
-  if (idx !== -1) {
-    [removed] = store.documents.splice(idx, 1);
-    await writeStore(store);
-  } else {
+  if (!isVercelRuntime()) {
+    const store = await ensureStore();
+    const idx = store.documents.findIndex(
+      (d) => d.id === id && d.userId === userId,
+    );
+    if (idx !== -1) {
+      [removed] = store.documents.splice(idx, 1);
+      await writeStore(store);
+    }
+  }
+  if (!removed) {
     removed = await pineconeGetDocument(id, userId);
   }
   if (removed && isPineconeConfigured()) {
@@ -191,7 +245,13 @@ export async function deleteDocument(
 }
 
 export async function countDocuments(userId: string): Promise<number> {
-  if (useDurableDb()) return dbCountDocuments(userId);
+  if (useDurableDb()) {
+    try {
+      return await dbCountDocuments(userId);
+    } catch (e) {
+      console.error("db count documents failed; falling back", e);
+    }
+  }
   const docs = await listDocuments(userId);
   return docs.length;
 }
