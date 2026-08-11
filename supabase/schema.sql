@@ -1,0 +1,80 @@
+-- DocBot Prisma schema — run in Supabase SQL Editor
+-- https://supabase.com/dashboard/project/awifaeoqgjnmzlvapesh/sql/new
+
+CREATE TABLE IF NOT EXISTS "User" (
+    "id" TEXT NOT NULL,
+    "supabaseId" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "fullName" TEXT,
+    "avatarUrl" TEXT,
+    "isPro" BOOLEAN NOT NULL DEFAULT false,
+    "proSince" TIMESTAMP(3),
+    "stripeCustomerId" TEXT,
+    "stripeSubscriptionId" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    CONSTRAINT "User_pkey" PRIMARY KEY ("id")
+);
+
+CREATE TABLE IF NOT EXISTS "Document" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "filename" TEXT NOT NULL,
+    "fileUrl" TEXT NOT NULL,
+    "fileType" TEXT NOT NULL,
+    "fileSize" INTEGER,
+    "pageCount" INTEGER,
+    "chunkCount" INTEGER,
+    "pineconeNs" TEXT NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'processing',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    CONSTRAINT "Document_pkey" PRIMARY KEY ("id")
+);
+
+CREATE TABLE IF NOT EXISTS "Chat" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "documentId" TEXT,
+    "kind" TEXT NOT NULL DEFAULT 'document',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    CONSTRAINT "Chat_pkey" PRIMARY KEY ("id")
+);
+
+CREATE TABLE IF NOT EXISTS "Message" (
+    "id" TEXT NOT NULL,
+    "chatId" TEXT NOT NULL,
+    "role" TEXT NOT NULL,
+    "content" TEXT NOT NULL,
+    "sources" JSONB,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "Message_pkey" PRIMARY KEY ("id")
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS "User_supabaseId_key" ON "User"("supabaseId");
+CREATE UNIQUE INDEX IF NOT EXISTS "User_email_key" ON "User"("email");
+CREATE INDEX IF NOT EXISTS "Document_userId_idx" ON "Document"("userId");
+CREATE INDEX IF NOT EXISTS "Chat_userId_kind_idx" ON "Chat"("userId", "kind");
+CREATE INDEX IF NOT EXISTS "Chat_documentId_idx" ON "Chat"("documentId");
+CREATE INDEX IF NOT EXISTS "Message_chatId_idx" ON "Message"("chatId");
+
+DO $$ BEGIN
+  ALTER TABLE "Document" ADD CONSTRAINT "Document_userId_fkey"
+    FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  ALTER TABLE "Chat" ADD CONSTRAINT "Chat_userId_fkey"
+    FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  ALTER TABLE "Chat" ADD CONSTRAINT "Chat_documentId_fkey"
+    FOREIGN KEY ("documentId") REFERENCES "Document"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  ALTER TABLE "Message" ADD CONSTRAINT "Message_chatId_fkey"
+    FOREIGN KEY ("chatId") REFERENCES "Chat"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
