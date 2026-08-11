@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireUser } from "@/lib/auth";
+import { requireUserOrResponse } from "@/lib/auth";
 import {
   BILLING_ENABLED,
   FREE_TIER_LIMIT,
@@ -12,16 +12,8 @@ import { listDocuments, countDocuments } from "@/lib/documents/store";
 export const runtime = "nodejs";
 
 export async function GET() {
-  const user = await requireUser();
-  if (!user) {
-    return NextResponse.json(
-      {
-        error: "Unauthorized",
-        hint: "Sign in again. If this persists on Vercel, check Supabase env vars and redirect URLs.",
-      },
-      { status: 401 },
-    );
-  }
+  const user = await requireUserOrResponse();
+  if (user instanceof Response) return user;
 
   try {
     const documents = await listDocuments(user.id);

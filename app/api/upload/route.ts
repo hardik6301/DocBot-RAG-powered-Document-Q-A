@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireUser } from "@/lib/auth";
+import { requireUserOrResponse } from "@/lib/auth";
 import {
   BILLING_ENABLED,
   FREE_TIER_LIMIT,
@@ -21,10 +21,8 @@ export const maxDuration = 60;
 const MAX_BYTES = 25 * 1024 * 1024;
 
 export async function POST(request: Request) {
-  const user = await requireUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const user = await requireUserOrResponse();
+  if (user instanceof Response) return user;
 
   const used = await countDocuments(user.id);
   if (BILLING_ENABLED && !user.isPro && used >= FREE_TIER_LIMIT) {

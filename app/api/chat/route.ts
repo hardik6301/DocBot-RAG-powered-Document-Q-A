@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireUser } from "@/lib/auth";
+import { requireUserOrResponse } from "@/lib/auth";
 import { getDocument } from "@/lib/documents/store";
 import { appendMessages, listMessages } from "@/lib/chat/store";
 import {
@@ -14,10 +14,8 @@ export const maxDuration = 60;
 
 export async function GET(request: Request) {
   try {
-    const user = await requireUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const user = await requireUserOrResponse();
+    if (user instanceof Response) return user;
 
     const documentId = new URL(request.url).searchParams.get("documentId");
     if (!documentId) {
@@ -51,10 +49,8 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const user = await requireUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const user = await requireUserOrResponse();
+    if (user instanceof Response) return user;
 
     if (!isGeminiConfigured() || !isPineconeConfigured()) {
       return NextResponse.json(
