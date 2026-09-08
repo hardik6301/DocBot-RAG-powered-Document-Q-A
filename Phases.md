@@ -161,15 +161,15 @@ Example: capital of France + Software Engineer JD → honest “not in the uploa
 
 **Goal:** Structured comparison across selected docs — not a naive chunk merge.
 
-- [ ] Multi-document selection UI  
-- [ ] Per-document retrieval for the same question  
-- [ ] Comparison prompt → structured table + key differences  
-- [ ] Comparative citations (which doc supports which cell/claim)  
+- [x] Multi-document selection UI (`/chat/compare`)  
+- [x] Per-document retrieval for the same question  
+- [x] Comparison prompt → structured table + key differences  
+- [x] Comparative citations (which doc supports which claim — labels A1, B2, …)  
 
 **Exit criteria**
 
-- User can pick ≥2 docs and get a comparison table + narrative differences  
-- Each major claim ties back to the correct document citation  
+- [x] User can pick ≥2 docs and get a comparison table + narrative differences  
+- [x] Each major claim ties back via per-doc sources (`/api/chat/compare`)  
 
 ---
 

@@ -13,9 +13,14 @@ const prompts = [
 type ChatInputProps = {
   onSend?: (text: string) => void;
   disabled?: boolean;
+  placeholder?: string;
 };
 
-export default function ChatInput({ onSend, disabled }: ChatInputProps) {
+export default function ChatInput({
+  onSend,
+  disabled,
+  placeholder = "Ask DocBot anything about this document...",
+}: ChatInputProps) {
   const [value, setValue] = useState("");
 
   const submit = () => {
@@ -58,7 +63,7 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
               }}
               rows={1}
               disabled={disabled}
-              placeholder="Ask anything about this document..."
+              placeholder={placeholder}
               className="max-h-32 min-h-[52px] flex-1 resize-none border-none bg-transparent px-3 py-3 text-body-md outline-none focus:ring-0 disabled:opacity-50"
             />
             <div className="flex items-center gap-2 p-2">

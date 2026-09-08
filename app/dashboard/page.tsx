@@ -77,6 +77,13 @@ export default function DashboardPage() {
             <span className="font-mono text-label-caps">Multi-doc Q&A</span>
           </Link>
           <Link
+            href="/chat/compare"
+            className="flex items-center gap-3 rounded-lg px-3 py-2 text-on-surface-variant transition-colors hover:bg-surface-container"
+          >
+            <Icon name="compare" className="text-[20px]" />
+            <span className="font-mono text-label-caps">Compare</span>
+          </Link>
+          <Link
             href="/analytics"
             className="flex items-center gap-3 rounded-lg px-3 py-2 text-on-surface-variant transition-colors hover:bg-surface-container"
           >

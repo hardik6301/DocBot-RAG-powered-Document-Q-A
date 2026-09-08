@@ -17,6 +17,7 @@ type NavbarProps = {
 const appLinks = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/chat/multi", label: "Multi-doc" },
+  { href: "/chat/compare", label: "Compare" },
   { href: "/analytics", label: "Analytics" },
 ];
 

@@ -4,7 +4,7 @@
 
 ### Docs
 - `Phases.md` updated: Phases 0–7 marked complete; Phases 8–14 locked with exit criteria
-- Immediate next work: **Phase 10 Document Comparison**
+- Immediate next work: **Phase 11 Voice Mode**
 - Rule: upgrade the single RAG pipeline; no parallel RAG stacks
 
 ### Current production reality
@@ -24,8 +24,13 @@ Document → ingest → chunks → embed → Pinecone
 ```
 
 ### Next slice
-1. ~~Phase 8–9~~ **DONE (code)**  
-2. **Phase 10** Document Comparison (next)  
+1. ~~Phase 8–10~~ **DONE (code)**  
+2. **Phase 11** Voice Mode (next)  
+
+### 2026-09-08 — Phase 10 complete (code)
+- `/api/chat/compare` — per-doc retrieve + rerank → structured comparison JSON
+- `/chat/compare` UI + `ComparisonTable` + comparative citations
+- Navbar: Compare link
 
 ### 2026-09-08 — Phase 9 complete (code)
 - Columns: `summary`, `keyTopics`, `suggestedQuestions` on Document (Supabase migration applied)
