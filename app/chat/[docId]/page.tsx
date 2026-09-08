@@ -12,6 +12,7 @@ import ReadAloudButton from "@/components/chat/ReadAloudButton";
 import type { PipelinePhase } from "@/components/chat/VoiceStatusBar";
 import type { RagTimings, VoiceLatencySample } from "@/lib/latency";
 import type { AppDocument, SourceCitation, StoredMessage } from "@/types";
+import ShareDocumentModal from "@/components/dashboard/ShareDocumentModal";
 
 type UiMessage = StoredMessage & { typing?: boolean };
 
@@ -35,6 +36,7 @@ export default function ChatPage({ params }: { params: { docId: string } }) {
   const [lastSample, setLastSample] = useState<VoiceLatencySample | null>(
     null,
   );
+  const [shareOpen, setShareOpen] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const phaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -228,6 +230,21 @@ export default function ChatPage({ params }: { params: { docId: string } }) {
                 ? `${doc.pageCount ?? "—"} pages · ${doc.chunkCount ?? 0} chunks · ${doc.status}`
                 : "Loading…"}
             </p>
+            {doc?.accessRole && doc.accessRole !== "owner" && (
+              <p className="mt-2 text-[11px] font-semibold uppercase tracking-wider text-primary">
+                Shared with you · {doc.accessRole}
+              </p>
+            )}
+            {(!doc?.accessRole || doc.accessRole === "owner") && (
+              <button
+                type="button"
+                onClick={() => setShareOpen(true)}
+                className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-outline-variant px-3 py-1.5 text-body-sm font-medium text-on-surface hover:bg-surface-container"
+              >
+                <Icon name="share" className="text-[16px]" />
+                Share
+              </button>
+            )}
           </div>
 
           <div className="flex-1 space-y-stack-md overflow-y-auto p-stack-md">
@@ -362,6 +379,14 @@ export default function ChatPage({ params }: { params: { docId: string } }) {
           />
         </section>
       </main>
+      {doc && (
+        <ShareDocumentModal
+          documentId={doc.id}
+          documentName={doc.filename}
+          open={shareOpen}
+          onClose={() => setShareOpen(false)}
+        />
+      )}
     </div>
   );
 }

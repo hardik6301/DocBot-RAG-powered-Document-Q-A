@@ -155,6 +155,13 @@ export default function DashboardPage() {
 
         <div className="mt-auto space-y-2">
           <Link
+            href="/workspaces"
+            className="flex items-center gap-3 rounded-lg px-3 py-2 text-on-surface-variant transition-colors hover:bg-surface-container"
+          >
+            <Icon name="group" className="text-[20px]" />
+            <span className="font-mono text-label-caps">Workspaces</span>
+          </Link>
+          <Link
             href="/history"
             className="flex items-center gap-3 rounded-lg px-3 py-2 text-on-surface-variant transition-colors hover:bg-surface-container"
           >

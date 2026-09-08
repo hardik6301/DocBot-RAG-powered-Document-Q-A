@@ -4,14 +4,14 @@
 
 ### Docs
 - `Phases.md` updated: Phases 0–7 marked complete; Phases 8–14 locked with exit criteria
-- Immediate next work: **Phase 14.6 Collaboration** (last) — or **14.4 Monetization** only if enabling Stripe
+- Immediate next work: **Phase 14.4 Monetization** only if enabling Stripe (`BILLING_ENABLED`); otherwise roadmap complete
 - Rule: upgrade the single RAG pipeline; no parallel RAG stacks
 
 ### Current production reality
 - Live: https://thedocbot.vercel.app
 - Auth: Supabase (`awifaeoqgjnmzlvapesh`)
-- DB: Supabase Postgres + Prisma (`User`, `Document`, `Chat`, `Message`, `IngestJob`)
-- Vectors: Pinecone; namespace = user `supabaseId`
+- DB: Supabase Postgres + Prisma (`User`, `Document`, `Chat`, `Message`, `IngestJob`, `Workspace`, `WorkspaceMember`, `DocumentShare`)
+- Vectors: Pinecone; namespace = user `supabaseId` (shared docs still query **owner** ns)
 - Files: Supabase Storage (`documents`) with local fallback
 - `BILLING_ENABLED = false` (Pro features usable; Stripe dormant)
 - DB failures → **503** (not fake 401) via `requireUserOrResponse`
@@ -25,9 +25,15 @@ Document → ingest → chunks → embed → Pinecone
 
 ### Next slice
 1. ~~Phase 8–13~~ **DONE**  
-2. ~~Phase 14.1–14.3 + 14.5~~ **DONE (code)**  
-3. **Phase 14.4** monetization deferred (`BILLING_ENABLED=false`)  
-4. **Phase 14.6** collaboration (last)  
+2. ~~Phase 14.1–14.3 + 14.5–14.6~~ **DONE (code)**  
+3. **Phase 14.4** monetization deferred (`BILLING_ENABLED=false`) — only remaining roadmap item  
+
+### 2026-09-08 — Phase 14.6 complete (code)
+- Schema: `Workspace`, `WorkspaceMember`, `DocumentShare`, `Document.workspaceId`
+- Access: `lib/access.ts` + `lib/sharing.ts`; chat/PATCH/DELETE gated by role
+- APIs: `/api/documents/[id]/share`, `/api/shares`, `/api/workspaces`
+- UI: Share modal on cards/chat, `/share/accept`, `/workspaces`
+- Contract: shared RAG always queries **owner** `pineconeNs` (no vector copy)
 
 ### 2026-09-08 — Phase 14.5 complete (code)
 - Golden set: `evals/golden/v1.json` (22 Qs); baseline runner loads it

@@ -9,6 +9,8 @@ export type AppUser = {
   isPro: boolean;
 };
 
+export type AccessRole = "owner" | "editor" | "viewer";
+
 export type AppDocument = {
   id: string;
   userId: string;
@@ -29,8 +31,34 @@ export type AppDocument = {
   tags: string[] | null;
   archived: boolean;
   archivedAt: string | null;
+  /** Phase 14.6 */
+  workspaceId?: string | null;
+  accessRole?: AccessRole;
+  sharedByEmail?: string | null;
   createdAt: string;
   updatedAt: string;
+};
+
+export type DocumentShareRow = {
+  id: string;
+  documentId: string;
+  email: string;
+  userId: string | null;
+  role: "viewer" | "editor";
+  token: string;
+  status: "pending" | "accepted" | "revoked";
+  invitedBy: string;
+  createdAt: string;
+  documentFilename?: string;
+};
+
+export type WorkspaceRow = {
+  id: string;
+  name: string;
+  ownerId: string;
+  role: "owner" | "admin" | "member";
+  memberCount: number;
+  createdAt: string;
 };
 
 /** Phase 13 — chat history browser row */

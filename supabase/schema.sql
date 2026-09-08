@@ -137,3 +137,76 @@ DO $$ BEGIN
     FOREIGN KEY ("documentId") REFERENCES "Document"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
+-- Phase 14.6 — collaboration
+CREATE TABLE IF NOT EXISTS "Workspace" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "ownerId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    CONSTRAINT "Workspace_pkey" PRIMARY KEY ("id")
+);
+
+CREATE TABLE IF NOT EXISTS "WorkspaceMember" (
+    "id" TEXT NOT NULL,
+    "workspaceId" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "role" TEXT NOT NULL DEFAULT 'member',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "WorkspaceMember_pkey" PRIMARY KEY ("id")
+);
+
+CREATE TABLE IF NOT EXISTS "DocumentShare" (
+    "id" TEXT NOT NULL,
+    "documentId" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "userId" TEXT,
+    "role" TEXT NOT NULL DEFAULT 'viewer',
+    "token" TEXT NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'pending',
+    "invitedBy" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    CONSTRAINT "DocumentShare_pkey" PRIMARY KEY ("id")
+);
+
+DO $$ BEGIN
+  ALTER TABLE "Document" ADD COLUMN "workspaceId" TEXT;
+EXCEPTION WHEN duplicate_column THEN NULL; END $$;
+
+CREATE UNIQUE INDEX IF NOT EXISTS "WorkspaceMember_workspaceId_userId_key"
+  ON "WorkspaceMember"("workspaceId", "userId");
+CREATE UNIQUE INDEX IF NOT EXISTS "DocumentShare_token_key" ON "DocumentShare"("token");
+CREATE UNIQUE INDEX IF NOT EXISTS "DocumentShare_documentId_email_key"
+  ON "DocumentShare"("documentId", "email");
+CREATE INDEX IF NOT EXISTS "Workspace_ownerId_idx" ON "Workspace"("ownerId");
+CREATE INDEX IF NOT EXISTS "WorkspaceMember_userId_idx" ON "WorkspaceMember"("userId");
+CREATE INDEX IF NOT EXISTS "DocumentShare_userId_status_idx" ON "DocumentShare"("userId", "status");
+CREATE INDEX IF NOT EXISTS "DocumentShare_documentId_idx" ON "DocumentShare"("documentId");
+CREATE INDEX IF NOT EXISTS "Document_workspaceId_idx" ON "Document"("workspaceId");
+
+DO $$ BEGIN
+  ALTER TABLE "Workspace" ADD CONSTRAINT "Workspace_ownerId_fkey"
+    FOREIGN KEY ("ownerId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  ALTER TABLE "WorkspaceMember" ADD CONSTRAINT "WorkspaceMember_workspaceId_fkey"
+    FOREIGN KEY ("workspaceId") REFERENCES "Workspace"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  ALTER TABLE "WorkspaceMember" ADD CONSTRAINT "WorkspaceMember_userId_fkey"
+    FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  ALTER TABLE "DocumentShare" ADD CONSTRAINT "DocumentShare_documentId_fkey"
+    FOREIGN KEY ("documentId") REFERENCES "Document"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  ALTER TABLE "Document" ADD CONSTRAINT "Document_workspaceId_fkey"
+    FOREIGN KEY ("workspaceId") REFERENCES "Workspace"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+

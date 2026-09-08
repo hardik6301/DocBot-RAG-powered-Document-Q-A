@@ -7,7 +7,8 @@ import {
   isStorageConfigured,
   useDurableDb,
 } from "@/lib/config";
-import { listDocuments, countDocuments } from "@/lib/documents/store";
+import { listAccessibleDocuments } from "@/lib/access";
+import { countDocuments } from "@/lib/documents/store";
 
 export const runtime = "nodejs";
 
@@ -16,7 +17,7 @@ export async function GET() {
   if (user instanceof Response) return user;
 
   try {
-    const documents = await listDocuments(user.id);
+    const documents = await listAccessibleDocuments(user);
     const used = await countDocuments(user.id);
 
     return NextResponse.json({

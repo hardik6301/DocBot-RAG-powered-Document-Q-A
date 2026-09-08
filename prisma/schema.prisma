@@ -8,25 +8,27 @@ datasource db {
 }
 
 model User {
-  id                   String     @id @default(cuid())
-  supabaseId           String     @unique
-  email                String     @unique
+  id                   String            @id @default(cuid())
+  supabaseId           String            @unique
+  email                String            @unique
   fullName             String?
   avatarUrl            String?
-  isPro                Boolean    @default(false)
+  isPro                Boolean           @default(false)
   proSince             DateTime?
   stripeCustomerId     String?
   stripeSubscriptionId String?
   documents            Document[]
   chats                Chat[]
-  createdAt            DateTime   @default(now())
-  updatedAt            DateTime   @updatedAt
+  ownedWorkspaces      Workspace[]       @relation("WorkspaceOwner")
+  workspaceMemberships WorkspaceMember[]
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
 }
 
 model Document {
-  id                  String   @id @default(cuid())
+  id                  String         @id @default(cuid())
   userId              String
-  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   filename            String
   fileUrl             String
   fileType            String
@@ -34,7 +36,7 @@ model Document {
   pageCount           Int?
   chunkCount          Int?
   pineconeNs          String
-  status              String   @default("processing")
+  status              String         @default("processing")
   /// Phase 9 — AI overview generated at ingest
   summary             String?
   keyTopics           Json?
@@ -42,16 +44,21 @@ model Document {
   /// Phase 13 — library organization
   folder              String?
   tags                Json?
-  archived            Boolean  @default(false)
+  archived            Boolean        @default(false)
   archivedAt          DateTime?
+  /// Phase 14.6 — optional team workspace
+  workspaceId         String?
+  workspace           Workspace?     @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
   chats               Chat[]
   ingestJobs          IngestJob[]
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  shares              DocumentShare[]
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
 
   @@index([userId])
   @@index([userId, archived])
   @@index([userId, folder])
+  @@index([workspaceId])
 }
 
 /// Phase 14.3 — background ingest queue with retries
@@ -77,6 +84,55 @@ model IngestJob {
   @@index([status, createdAt])
   @@index([documentId])
   @@index([userId])
+}
+
+/// Phase 14.6 — team workspace
+model Workspace {
+  id        String            @id @default(cuid())
+  name      String
+  ownerId   String
+  owner     User              @relation("WorkspaceOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members   WorkspaceMember[]
+  documents Document[]
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  @@index([ownerId])
+}
+
+model WorkspaceMember {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// owner | admin | member
+  role        String    @default("member")
+  createdAt   DateTime  @default(now())
+
+  @@unique([workspaceId, userId])
+  @@index([userId])
+}
+
+/// Phase 14.6 — per-document ACL
+model DocumentShare {
+  id         String   @id @default(cuid())
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  email      String
+  userId     String?
+  /// viewer | editor
+  role       String   @default("viewer")
+  token      String   @unique @default(cuid())
+  /// pending | accepted | revoked
+  status     String   @default("pending")
+  invitedBy  String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([documentId, email])
+  @@index([userId, status])
+  @@index([documentId])
 }
 
 model Chat {

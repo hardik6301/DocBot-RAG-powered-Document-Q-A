@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import { requireUserOrResponse } from "@/lib/auth";
 import {
+  canDeleteDocument,
+  canEditMeta,
+  getAccessibleDocument,
+} from "@/lib/access";
+import {
   deleteDocument,
-  getDocument,
   updateDocument,
 } from "@/lib/documents/store";
 import { deleteChatsForDocument } from "@/lib/chat/store";
@@ -29,16 +33,24 @@ export async function GET(_req: Request, { params }: Ctx) {
   const user = await requireUserOrResponse();
   if (user instanceof Response) return user;
 
-  const doc = await getDocument(params.id, user.id);
-  if (!doc) {
+  const access = await getAccessibleDocument(params.id, user);
+  if (!access) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
-  return NextResponse.json({ document: doc });
+  return NextResponse.json({
+    document: access.document,
+    accessRole: access.role,
+  });
 }
 
 export async function PATCH(request: Request, { params }: Ctx) {
   const user = await requireUserOrResponse();
   if (user instanceof Response) return user;
+
+  const access = await getAccessibleDocument(params.id, user);
+  if (!access || !canEditMeta(access.role)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const body = (await request.json().catch(() => null)) as {
     filename?: string;
@@ -80,6 +92,12 @@ export async function PATCH(request: Request, { params }: Ctx) {
   }
 
   if (body.archived !== undefined) {
+    if (access.role !== "owner") {
+      return NextResponse.json(
+        { error: "Only the owner can archive" },
+        { status: 403 },
+      );
+    }
     patch.archived = Boolean(body.archived);
   }
 
@@ -90,16 +108,28 @@ export async function PATCH(request: Request, { params }: Ctx) {
     );
   }
 
-  const updated = await updateDocument(params.id, user.id, patch);
+  // Meta edits for shared editors still write via owner-scoped store using owner id.
+  const updated = await updateDocument(
+    params.id,
+    access.document.userId,
+    patch,
+  );
   if (!updated) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
-  return NextResponse.json({ document: updated });
+  return NextResponse.json({
+    document: { ...updated, accessRole: access.role },
+  });
 }
 
 export async function DELETE(_req: Request, { params }: Ctx) {
   const user = await requireUserOrResponse();
   if (user instanceof Response) return user;
+
+  const access = await getAccessibleDocument(params.id, user);
+  if (!access || !canDeleteDocument(access.role)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const removed = await deleteDocument(params.id, user.id);
   if (!removed) {

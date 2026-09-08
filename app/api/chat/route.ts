@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireUserOrResponse } from "@/lib/auth";
-import { getDocument } from "@/lib/documents/store";
+import { canChat, getAccessibleDocument } from "@/lib/access";
 import { appendMessages, listMessages } from "@/lib/chat/store";
 import {
   embedQuery,
@@ -36,8 +36,8 @@ export async function GET(request: Request) {
       );
     }
 
-    const doc = await getDocument(documentId, user.id);
-    if (!doc) {
+    const access = await getAccessibleDocument(documentId, user);
+    if (!access) {
       return NextResponse.json(
         { error: "Document not found" },
         { status: 404 },
@@ -45,7 +45,11 @@ export async function GET(request: Request) {
     }
 
     const messages = await listMessages(documentId, user.id);
-    return NextResponse.json({ messages, document: doc });
+    return NextResponse.json({
+      messages,
+      document: access.document,
+      accessRole: access.role,
+    });
   } catch (e) {
     console.error("GET /api/chat failed", e);
     return NextResponse.json(
@@ -99,13 +103,14 @@ export async function POST(request: Request) {
       );
     }
 
-    const doc = await getDocument(body.documentId, user.id);
-    if (!doc) {
+    const access = await getAccessibleDocument(body.documentId, user);
+    if (!access || !canChat(access.role)) {
       return NextResponse.json(
         { error: "Document not found" },
         { status: 404 },
       );
     }
+    const doc = access.document;
     if (doc.status !== "ready") {
       return NextResponse.json(
         { error: "Document is not ready yet" },
@@ -129,7 +134,8 @@ export async function POST(request: Request) {
     const vector = await embedQuery(question);
     const embedMs = Date.now() - tEmbed;
 
-    const namespace = doc.pineconeNs || user.supabaseId || user.id;
+    // Always query the owner's Pinecone namespace (sharing must not use grantee ns).
+    const namespace = doc.pineconeNs;
     const tPine = Date.now();
     const matches = await querySimilar(
       namespace,

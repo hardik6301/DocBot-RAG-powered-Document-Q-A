@@ -38,6 +38,7 @@ function toApp(doc: {
   tags?: unknown;
   archived?: boolean;
   archivedAt?: Date | null;
+  workspaceId?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }): AppDocument {
@@ -59,6 +60,7 @@ function toApp(doc: {
     tags: asStringArray(doc.tags) ?? [],
     archived: Boolean(doc.archived),
     archivedAt: doc.archivedAt ? doc.archivedAt.toISOString() : null,
+    workspaceId: doc.workspaceId ?? null,
     createdAt: doc.createdAt.toISOString(),
     updatedAt: doc.updatedAt.toISOString(),
   };

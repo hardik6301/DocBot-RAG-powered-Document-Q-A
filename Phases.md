@@ -302,13 +302,15 @@ Build as sub-phases. Collaboration last.
 
 ### 14.6 — Collaboration (last)
 
-- [ ] Sharing  
-- [ ] Workspaces / teams  
-- [ ] Permissions  
+- [x] Sharing (`DocumentShare` invite by email + accept token)  
+- [x] Workspaces / teams (`Workspace` + `WorkspaceMember`; assign docs)  
+- [x] Permissions (owner / editor / viewer via `lib/access.ts`)  
 
 **Exit criteria**
 
-- Defined per sub-epic when started; collaboration last (largest architecture change)  
+- [x] Owner can invite by email; grantee chats using **owner** Pinecone ns  
+- [x] Shared + workspace docs appear in library with role badge  
+- [x] Viewers chat only; editors may rename/tags; only owner deletes/shares  
 
 ---
 

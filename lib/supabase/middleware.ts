@@ -51,6 +51,8 @@ export async function updateSession(request: NextRequest) {
     path.startsWith("/dashboard") ||
     path.startsWith("/chat") ||
     path.startsWith("/history") ||
+    path.startsWith("/workspaces") ||
+    path.startsWith("/share") ||
     path.startsWith("/analytics") ||
     path.startsWith("/billing");
   const isAuthPage = path.startsWith("/auth/login");

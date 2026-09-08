@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Icon from "@/components/ui/Icon";
+import ShareDocumentModal from "@/components/dashboard/ShareDocumentModal";
 import type { AppDocument } from "@/types";
 
 type Props = {
@@ -86,7 +87,11 @@ export default function DocumentCard({
   const processing = doc.status === "processing";
   const failed = doc.status === "failed";
   const visual = iconFor(doc.fileType);
+  const role = doc.accessRole ?? "owner";
+  const isOwner = role === "owner";
+  const canEdit = role === "owner" || role === "editor";
   const [menuOpen, setMenuOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const run = async (fn: () => Promise<void> | void) => {
@@ -115,6 +120,11 @@ export default function DocumentCard({
             <Icon name={visual.icon} className={visual.iconColor} />
           </div>
           <div className="flex items-center gap-1">
+            {!isOwner && (
+              <span className="rounded-full bg-surface-container px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
+                {role}
+              </span>
+            )}
             <span
               className={`flex items-center gap-1 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${
                 ready
@@ -135,6 +145,7 @@ export default function DocumentCard({
               />
               {doc.archived ? "archived" : doc.status}
             </span>
+            {(canEdit || isOwner) && (
             <div className="relative">
               <button
                 type="button"
@@ -154,92 +165,114 @@ export default function DocumentCard({
                     onClick={() => setMenuOpen(false)}
                   />
                   <div className="absolute right-0 z-20 mt-1 w-52 rounded-xl border border-outline-variant bg-white py-1 shadow-lg">
-                    <button
-                      type="button"
-                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-body-sm hover:bg-surface-container"
-                      onClick={() =>
-                        void run(async () => {
-                          const next = window.prompt(
-                            "Rename document",
-                            doc.filename,
-                          );
-                          if (next == null || !next.trim()) return;
-                          await onRename?.(doc.id, next.trim());
-                        })
-                      }
-                    >
-                      <Icon name="edit" className="text-[18px]" />
-                      Rename
-                    </button>
-                    <button
-                      type="button"
-                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-body-sm hover:bg-surface-container"
-                      onClick={() =>
-                        void run(async () => {
-                          const suggestion = folders[0] ?? "";
-                          const next = window.prompt(
-                            "Folder name (empty = Unfiled)",
-                            doc.folder ?? suggestion,
-                          );
-                          if (next == null) return;
-                          await onMoveFolder?.(doc.id, next.trim() || null);
-                        })
-                      }
-                    >
-                      <Icon name="folder" className="text-[18px]" />
-                      Move to folder
-                    </button>
-                    <button
-                      type="button"
-                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-body-sm hover:bg-surface-container"
-                      onClick={() =>
-                        void run(async () => {
-                          const next = window.prompt(
-                            "Tags (comma-separated)",
-                            (doc.tags ?? []).join(", "),
-                          );
-                          if (next == null) return;
-                          const tags = next
-                            .split(",")
-                            .map((t) => t.trim())
-                            .filter(Boolean);
-                          await onSetTags?.(doc.id, tags);
-                        })
-                      }
-                    >
-                      <Icon name="sell" className="text-[18px]" />
-                      Edit tags
-                    </button>
-                    <button
-                      type="button"
-                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-body-sm hover:bg-surface-container"
-                      onClick={() =>
-                        void run(async () => {
-                          await onArchive?.(doc.id, !doc.archived);
-                        })
-                      }
-                    >
-                      <Icon
-                        name={doc.archived ? "unarchive" : "archive"}
-                        className="text-[18px]"
-                      />
-                      {doc.archived ? "Unarchive" : "Archive"}
-                    </button>
-                    <button
-                      type="button"
-                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-body-sm text-error hover:bg-error/5"
-                      onClick={() => {
-                        setMenuOpen(false);
-                        onDelete?.(doc.id);
-                      }}
-                    >
-                      <Icon name="delete" className="text-[18px]" />
-                      Delete
-                    </button>
+                    {isOwner && (
+                      <button
+                        type="button"
+                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-body-sm hover:bg-surface-container"
+                        onClick={() => {
+                          setMenuOpen(false);
+                          setShareOpen(true);
+                        }}
+                      >
+                        <Icon name="share" className="text-[18px]" />
+                        Share
+                      </button>
+                    )}
+                    {canEdit && (
+                      <>
+                        <button
+                          type="button"
+                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-body-sm hover:bg-surface-container"
+                          onClick={() =>
+                            void run(async () => {
+                              const next = window.prompt(
+                                "Rename document",
+                                doc.filename,
+                              );
+                              if (next == null || !next.trim()) return;
+                              await onRename?.(doc.id, next.trim());
+                            })
+                          }
+                        >
+                          <Icon name="edit" className="text-[18px]" />
+                          Rename
+                        </button>
+                        <button
+                          type="button"
+                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-body-sm hover:bg-surface-container"
+                          onClick={() =>
+                            void run(async () => {
+                              const suggestion = folders[0] ?? "";
+                              const next = window.prompt(
+                                "Folder name (empty = Unfiled)",
+                                doc.folder ?? suggestion,
+                              );
+                              if (next == null) return;
+                              await onMoveFolder?.(doc.id, next.trim() || null);
+                            })
+                          }
+                        >
+                          <Icon name="folder" className="text-[18px]" />
+                          Move to folder
+                        </button>
+                        <button
+                          type="button"
+                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-body-sm hover:bg-surface-container"
+                          onClick={() =>
+                            void run(async () => {
+                              const next = window.prompt(
+                                "Tags (comma-separated)",
+                                (doc.tags ?? []).join(", "),
+                              );
+                              if (next == null) return;
+                              const tags = next
+                                .split(",")
+                                .map((t) => t.trim())
+                                .filter(Boolean);
+                              await onSetTags?.(doc.id, tags);
+                            })
+                          }
+                        >
+                          <Icon name="sell" className="text-[18px]" />
+                          Edit tags
+                        </button>
+                      </>
+                    )}
+                    {isOwner && (
+                      <>
+                        <button
+                          type="button"
+                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-body-sm hover:bg-surface-container"
+                          onClick={() =>
+                            void run(async () => {
+                              await onArchive?.(doc.id, !doc.archived);
+                            })
+                          }
+                        >
+                          <Icon
+                            name={doc.archived ? "unarchive" : "archive"}
+                            className="text-[18px]"
+                          />
+                          {doc.archived ? "Unarchive" : "Archive"}
+                        </button>
+                        <button
+                          type="button"
+                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-body-sm text-error hover:bg-error/5"
+                          onClick={() => {
+                            setMenuOpen(false);
+                            onDelete?.(doc.id);
+                          }}
+                        >
+                          <Icon name="delete" className="text-[18px]" />
+                          Delete
+                        </button>
+                      </>
+                    )}
                   </div>
                 </>
               )}
             </div>
+            )}
           </div>
         </div>
         <h3
@@ -313,6 +346,12 @@ export default function DocumentCard({
           </span>
         )}
       </div>
+      <ShareDocumentModal
+        documentId={doc.id}
+        documentName={doc.filename}
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+      />
     </article>
   );
 }
