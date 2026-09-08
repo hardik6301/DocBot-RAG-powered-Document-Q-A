@@ -12,6 +12,19 @@ export type DocumentPatch = {
   archived?: boolean;
 };
 
+function kickIngest(jobId: string | undefined) {
+  if (!jobId) return;
+  // Separate serverless invocation as backup to waitUntil.
+  void fetch("/api/ingest/run", {
+    method: "POST",
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ jobId }),
+  }).catch(() => {
+    /* background */
+  });
+}
+
 export function useDocuments() {
   const [documents, setDocuments] = useState<AppDocument[]>([]);
   const [usage, setUsage] = useState<Usage>({ used: 0, limit: null });
@@ -42,6 +55,16 @@ export function useDocuments() {
     void refresh();
   }, [refresh]);
 
+  // Poll while any document is processing (async ingest).
+  useEffect(() => {
+    const processing = documents.some((d) => d.status === "processing");
+    if (!processing) return;
+    const id = window.setInterval(() => {
+      void refresh();
+    }, 2500);
+    return () => window.clearInterval(id);
+  }, [documents, refresh]);
+
   const upload = useCallback(
     async (file: File) => {
       if (uploadLock.current) return undefined as unknown as AppDocument;
@@ -55,6 +78,7 @@ export function useDocuments() {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Upload failed");
         const uploaded = data.document as AppDocument | undefined;
+        kickIngest(data.jobId as string | undefined);
         if (uploaded) {
           setDocuments((prev) => [
             uploaded,
@@ -91,6 +115,7 @@ export function useDocuments() {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "URL ingest failed");
         const uploaded = data.document as AppDocument | undefined;
+        kickIngest(data.jobId as string | undefined);
         if (uploaded) {
           setDocuments((prev) => [
             uploaded,
@@ -107,6 +132,31 @@ export function useDocuments() {
         uploadLock.current = false;
         setUploading(false);
       }
+    },
+    [refresh],
+  );
+
+  const retryIngest = useCallback(
+    async (documentId: string) => {
+      setError(null);
+      const res = await fetch("/api/ingest/retry", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ documentId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Retry failed");
+        throw new Error(data.error || "Retry failed");
+      }
+      kickIngest(data.jobId as string | undefined);
+      setDocuments((prev) =>
+        prev.map((d) =>
+          d.id === documentId ? { ...d, status: "processing" } : d,
+        ),
+      );
+      await refresh();
     },
     [refresh],
   );
@@ -176,6 +226,7 @@ export function useDocuments() {
     refresh,
     upload,
     ingestUrl,
+    retryIngest,
     remove,
     patch,
     setPro,

@@ -25,6 +25,7 @@
     "@prisma/client": "^5.22.0",
     "@supabase/ssr": "^0.12.1",
     "@supabase/supabase-js": "^2.110.3",
+    "@vercel/functions": "^3.9.5",
     "framer-motion": "^11.18.2",
     "jspdf": "^4.2.1",
     "jszip": "^3.10.1",

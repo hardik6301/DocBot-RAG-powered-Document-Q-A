@@ -109,3 +109,31 @@ EXCEPTION WHEN duplicate_column THEN NULL; END $$;
 CREATE INDEX IF NOT EXISTS "Document_userId_archived_idx" ON "Document"("userId", "archived");
 CREATE INDEX IF NOT EXISTS "Document_userId_folder_idx" ON "Document"("userId", "folder");
 
+CREATE TABLE IF NOT EXISTS "IngestJob" (
+    "id" TEXT NOT NULL,
+    "documentId" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "vectorNs" TEXT NOT NULL,
+    "filename" TEXT NOT NULL,
+    "fileUrl" TEXT NOT NULL,
+    "fileType" TEXT NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'pending',
+    "attempts" INTEGER NOT NULL DEFAULT 0,
+    "maxAttempts" INTEGER NOT NULL DEFAULT 3,
+    "lastError" TEXT,
+    "startedAt" TIMESTAMP(3),
+    "finishedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    CONSTRAINT "IngestJob_pkey" PRIMARY KEY ("id")
+);
+
+CREATE INDEX IF NOT EXISTS "IngestJob_status_createdAt_idx" ON "IngestJob"("status", "createdAt");
+CREATE INDEX IF NOT EXISTS "IngestJob_documentId_idx" ON "IngestJob"("documentId");
+CREATE INDEX IF NOT EXISTS "IngestJob_userId_idx" ON "IngestJob"("userId");
+
+DO $$ BEGIN
+  ALTER TABLE "IngestJob" ADD CONSTRAINT "IngestJob_documentId_fkey"
+    FOREIGN KEY ("documentId") REFERENCES "Document"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+

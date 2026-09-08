@@ -3,21 +3,19 @@ import { requireUserOrResponse } from "@/lib/auth";
 import {
   BILLING_ENABLED,
   FREE_TIER_LIMIT,
-  useDurableDb,
 } from "@/lib/config";
 import {
   countDocuments,
   createDocument,
-  updateDocument,
 } from "@/lib/documents/store";
 import { deleteUploadFile, saveUploadBytes } from "@/lib/storage/files";
-import { ingestDocument } from "@/lib/ingest";
 import { RATE, rateLimit, rateLimitHeaders } from "@/lib/rate-limit";
 import { logEvent } from "@/lib/log";
 import {
   fetchWebpage,
   sanitizeFilename,
 } from "@/lib/webpage";
+import { enqueueAndSchedule } from "@/lib/ingest-queue";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -60,7 +58,6 @@ export async function POST(request: Request) {
 
   let docId: string | null = null;
   let fileUrl: string | null = null;
-  const started = Date.now();
 
   try {
     const page = await fetchWebpage(rawUrl);
@@ -94,87 +91,26 @@ export async function POST(request: Request) {
     });
     docId = doc.id;
 
-    const result = await ingestDocument({
-      userId: vectorNs,
-      docId: doc.id,
+    const job = await enqueueAndSchedule({
+      documentId: doc.id,
+      userId: user.id,
+      vectorNs,
       filename,
       fileUrl: saved.fileUrl,
       fileType: "url",
     });
 
-    const patch = {
-      status: "ready" as const,
-      pageCount: result.pageCount,
-      chunkCount: result.chunkCount,
-      summary: result.intelligence?.summary ?? null,
-      keyTopics: result.intelligence?.keyTopics ?? null,
-      suggestedQuestions: result.intelligence?.suggestedQuestions ?? null,
-    };
-
-    let ready = await updateDocument(doc.id, user.id, patch);
-    if (!ready && useDurableDb()) {
-      try {
-        const prisma = (await import("@/lib/prisma")).default;
-        const { Prisma } = await import("@prisma/client");
-        const row = await prisma.document.update({
-          where: { id: doc.id },
-          data: {
-            status: patch.status,
-            pageCount: patch.pageCount,
-            chunkCount: patch.chunkCount,
-            summary: patch.summary,
-            keyTopics:
-              patch.keyTopics === null
-                ? Prisma.DbNull
-                : patch.keyTopics ?? undefined,
-            suggestedQuestions:
-              patch.suggestedQuestions === null
-                ? Prisma.DbNull
-                : patch.suggestedQuestions ?? undefined,
-          },
-        });
-        ready = {
-          ...doc,
-          status: row.status as "ready",
-          pageCount: row.pageCount,
-          chunkCount: row.chunkCount,
-          summary: row.summary ?? null,
-          keyTopics: Array.isArray(row.keyTopics)
-            ? (row.keyTopics as string[])
-            : null,
-          suggestedQuestions: Array.isArray(row.suggestedQuestions)
-            ? (row.suggestedQuestions as string[])
-            : null,
-          folder: row.folder ?? null,
-          tags: Array.isArray(row.tags) ? (row.tags as string[]) : doc.tags,
-          archived: Boolean(row.archived),
-          archivedAt: row.archivedAt ? row.archivedAt.toISOString() : null,
-          updatedAt: row.updatedAt.toISOString(),
-        };
-      } catch (e) {
-        console.error("direct ready status update failed", e);
-      }
-    }
-
-    const document = ready ?? {
-      ...doc,
-      ...patch,
-      updatedAt: new Date().toISOString(),
-    };
-
-    logEvent("ingest.complete", {
+    logEvent("ingest.job.enqueued", {
       userId: user.id,
-      docId: document.id,
+      docId: doc.id,
+      jobId: job.id,
       fileType: "url",
       source: page.url,
-      pageCount: document.pageCount,
-      chunkCount: document.chunkCount,
-      ms: Date.now() - started,
     });
 
     return NextResponse.json(
-      { document },
-      { status: 201, headers: rateLimitHeaders(limited) },
+      { document: doc, jobId: job.id },
+      { status: 202, headers: rateLimitHeaders(limited) },
     );
   } catch (e) {
     const message = e instanceof Error ? e.message : "URL ingest failed";
@@ -183,13 +119,10 @@ export async function POST(request: Request) {
       userId: user.id,
       docId,
       fileType: "url",
-      ms: Date.now() - started,
       error: message,
     });
 
-    if (docId) {
-      await updateDocument(docId, user.id, { status: "failed" });
-    } else if (fileUrl) {
+    if (fileUrl && !docId) {
       await deleteUploadFile(fileUrl);
     }
 

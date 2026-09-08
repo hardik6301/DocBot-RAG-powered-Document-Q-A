@@ -13,6 +13,7 @@ type Props = {
   onArchive?: (id: string, archived: boolean) => Promise<void> | void;
   onMoveFolder?: (id: string, folder: string | null) => Promise<void> | void;
   onSetTags?: (id: string, tags: string[]) => Promise<void> | void;
+  onRetry?: (id: string) => Promise<void> | void;
 };
 
 function formatDate(iso: string) {
@@ -79,6 +80,7 @@ export default function DocumentCard({
   onArchive,
   onMoveFolder,
   onSetTags,
+  onRetry,
 }: Props) {
   const ready = doc.status === "ready";
   const processing = doc.status === "processing";
@@ -273,7 +275,7 @@ export default function DocumentCard({
         )}
         {failed && (
           <p className="mt-2 text-xs text-rose-700">
-            Ingest failed — delete and re-upload after fixing API/quota issues.
+            Ingest failed — retry indexing or delete and re-upload.
           </p>
         )}
       </div>
@@ -287,12 +289,26 @@ export default function DocumentCard({
             Ask Questions
             <Icon name="arrow_forward" className="text-[18px]" />
           </Link>
+        ) : failed ? (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() =>
+              void run(async () => {
+                await onRetry?.(doc.id);
+              })
+            }
+            className="flex items-center gap-2 font-semibold text-primary disabled:opacity-50"
+          >
+            <Icon name="refresh" className="text-[18px]" />
+            Retry indexing
+          </button>
         ) : (
           <span className="text-body-sm font-medium text-on-surface-variant">
             {doc.archived
               ? "Archived"
               : processing
-                ? "Indexing…"
+                ? "Indexing in background…"
                 : "Not ready"}
           </span>
         )}

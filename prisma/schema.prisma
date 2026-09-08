@@ -45,12 +45,38 @@ model Document {
   archived            Boolean  @default(false)
   archivedAt          DateTime?
   chats               Chat[]
+  ingestJobs          IngestJob[]
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
   @@index([userId])
   @@index([userId, archived])
   @@index([userId, folder])
+}
+
+/// Phase 14.3 — background ingest queue with retries
+model IngestJob {
+  id          String    @id @default(cuid())
+  documentId  String
+  document    Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  userId      String
+  vectorNs    String
+  filename    String
+  fileUrl     String
+  fileType    String
+  /// pending | running | succeeded | failed
+  status      String    @default("pending")
+  attempts    Int       @default(0)
+  maxAttempts Int       @default(3)
+  lastError   String?
+  startedAt   DateTime?
+  finishedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([status, createdAt])
+  @@index([documentId])
+  @@index([userId])
 }
 
 model Chat {

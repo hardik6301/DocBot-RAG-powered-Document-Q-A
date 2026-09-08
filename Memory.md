@@ -4,13 +4,13 @@
 
 ### Docs
 - `Phases.md` updated: Phases 0–7 marked complete; Phases 8–14 locked with exit criteria
-- Immediate next work: **Phase 14.3** Infrastructure (background ingest queue + retries)
+- Immediate next work: **Phase 14.4** Monetization — or **14.5** formal eval (Stripe still off by default)
 - Rule: upgrade the single RAG pipeline; no parallel RAG stacks
 
 ### Current production reality
 - Live: https://thedocbot.vercel.app
 - Auth: Supabase (`awifaeoqgjnmzlvapesh`)
-- DB: Supabase Postgres + Prisma (`User`, `Document`, `Chat`, `Message`)
+- DB: Supabase Postgres + Prisma (`User`, `Document`, `Chat`, `Message`, `IngestJob`)
 - Vectors: Pinecone; namespace = user `supabaseId`
 - Files: Supabase Storage (`documents`) with local fallback
 - `BILLING_ENABLED = false` (Pro features usable; Stripe dormant)
@@ -25,8 +25,14 @@ Document → ingest → chunks → embed → Pinecone
 
 ### Next slice
 1. ~~Phase 8–13~~ **DONE**  
-2. ~~Phase 14.1–14.2~~ **DONE (code)**  
-3. **Phase 14.3** job queue + ingest retries (next)  
+2. ~~Phase 14.1–14.3~~ **DONE (code)**  
+3. **Phase 14.4** monetization polish (optional) or **14.5** eval harness  
+
+### 2026-09-08 — Phase 14.3 complete (code)
+- `IngestJob` table + local JSON fallback; upload/URL enqueue and return **202** while `processing`
+- Worker: `processIngestJob` with claim lock, up to 3 attempts + backoff; `@vercel/functions` `waitUntil` + client `/api/ingest/run` kick
+- Retry UI on failed cards → `POST /api/ingest/retry`; dashboard polls every 2.5s while processing
+- Logs: `ingest.job.enqueued` / `attempt` / `retry` / `complete` / `failed`
 
 ### 2026-09-08 — Phase 14.2 complete (code)
 - Scanned PDF OCR via Gemini multimodal when pdf-parse text is empty/sparse (`lib/ocr.ts`)
@@ -64,7 +70,7 @@ Document → ingest → chunks → embed → Pinecone
 - Re-upload older docs to generate overview
 
 ### Go / no-go after Phase 8
-- **Provisional YES → Phase 9…13 + 14.1–14.2 shipped; 14.3 next** (12 only if needed)
+- **Provisional YES → Phase 9…13 + 14.1–14.3 shipped; 14.4/14.5 next** (12 only if needed)
 
 ### 2026-09-08 — Phase 8.4 complete (code)
 - `lib/grounding.ts`: score floor + lexical mismatch gate + strict prompt rules

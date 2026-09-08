@@ -271,10 +271,15 @@ Build as sub-phases. Collaboration last.
 
 ### 14.3 — Infrastructure
 
-- [ ] Background processing / job queue  
-- [ ] Retries (ingest job-level)  
+- [x] Background processing / job queue (`IngestJob` + `waitUntil` / client kick)  
+- [x] Retries (ingest job-level, up to 3 with backoff)  
 - [x] Rate limiting (started in 14.1)  
-- [x] Better observability (started in 14.1; expand later)  
+- [x] Better observability (started in 14.1; job attempt logs)  
+
+**Exit criteria**
+
+- [x] Upload/URL return quickly with `processing`; worker marks `ready`/`failed`  
+- [x] Transient ingest failures retry; failed docs can be re-queued from UI  
 
 ### 14.4 — Monetization
 

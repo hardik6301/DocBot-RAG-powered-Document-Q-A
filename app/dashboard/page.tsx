@@ -22,6 +22,7 @@ export default function DashboardPage() {
     uploading,
     upload,
     ingestUrl,
+    retryIngest,
     remove,
     patch,
   } = useDocuments();
@@ -264,7 +265,13 @@ export default function DashboardPage() {
             {uploading && (
               <ProcessingStatus
                 status="uploading"
-                message="Extracting text, embedding chunks, and indexing in Pinecone."
+                message="File saved — indexing continues in the background."
+              />
+            )}
+            {documents.some((d) => d.status === "processing") && !uploading && (
+              <ProcessingStatus
+                status="processing"
+                message="Chunking, embedding, and indexing… this page refreshes automatically."
               />
             )}
             <FileUpload
@@ -330,6 +337,9 @@ export default function DashboardPage() {
                   }}
                   onSetTags={async (id, tags) => {
                     await patch(id, { tags });
+                  }}
+                  onRetry={async (id) => {
+                    await retryIngest(id);
                   }}
                 />
               ))}
