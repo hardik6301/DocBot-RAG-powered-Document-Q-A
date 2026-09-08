@@ -1,0 +1,316 @@
+{
+  "pass": 18,
+  "partial": 3,
+  "fail": 1,
+  "rows": [
+    {
+      "id": "A1",
+      "doc": "A",
+      "q": "What is the job title and location?",
+      "expect": "Software Engineer (Backend); Bengaluru; Hybrid 3 days",
+      "expectSrc": "A p1",
+      "keywords": [
+        "software engineer",
+        "bengaluru",
+        "hybrid"
+      ],
+      "answer": "The job title is Software Engineer (Backend) and the location is Bengaluru, India (Hybrid – 3 days in office) [1].",
+      "actualSrc": "p1 @0.67; p2 @0.67",
+      "result": "PASS"
+    },
+    {
+      "id": "A2",
+      "doc": "A",
+      "q": "What is the minimum years of experience required?",
+      "expect": "2 years",
+      "expectSrc": "A p1",
+      "keywords": [
+        "2 year"
+      ],
+      "answer": "The minimum requirement is 2 years of professional software development experience [1].",
+      "actualSrc": "p1 @0.65; p2 @0.65",
+      "result": "PASS"
+    },
+    {
+      "id": "A3",
+      "doc": "A",
+      "q": "Which programming languages are required?",
+      "expect": "TypeScript or JavaScript",
+      "expectSrc": "A p1",
+      "keywords": [
+        "typescript",
+        "javascript"
+      ],
+      "answer": "Based on the provided document, strong proficiency in TypeScript or JavaScript is required [1].",
+      "actualSrc": "p1 @0.63; p2 @0.60",
+      "result": "PASS"
+    },
+    {
+      "id": "A4",
+      "doc": "A",
+      "q": "Is a CS degree mandatory?",
+      "expect": "CS/IT or equivalent practical experience",
+      "expectSrc": "A p1",
+      "keywords": [
+        "equivalent",
+        "computer science",
+        "bachelor"
+      ],
+      "answer": "No, a Computer Science degree is not strictly mandatory, as the qualifications allow for \"equivalent practical experience\" in addition to a Bachelor’s degree in Computer Science, IT, or equivalent [1].",
+      "actualSrc": "p1 @0.61; p2 @0.59",
+      "result": "PASS"
+    },
+    {
+      "id": "A5",
+      "doc": "A",
+      "q": "What AWS-related preference is listed?",
+      "expect": "AWS S3/Lambda/ECS preferred",
+      "expectSrc": "A p2",
+      "keywords": [
+        "aws",
+        "preferred"
+      ],
+      "answer": "The preferred AWS-related experience is hands-on AWS experience with S3, Lambda, or ECS [1].",
+      "actualSrc": "p2 @0.63; p1 @0.58",
+      "result": "PASS"
+    },
+    {
+      "id": "A6",
+      "doc": "A",
+      "q": "What is the salary range?",
+      "expect": "INR 18,00,000 to 28,00,000",
+      "expectSrc": "A p2",
+      "keywords": [
+        "18",
+        "28"
+      ],
+      "answer": "The base salary range is INR 18,00,000 to INR 28,00,000 per year, depending on experience [1].",
+      "actualSrc": "p2 @0.65; p1 @0.59",
+      "result": "PASS"
+    },
+    {
+      "id": "A7",
+      "doc": "A",
+      "q": "How do candidates apply?",
+      "expect": "careers@acme.example subject SE-Backend-2026",
+      "expectSrc": "A p2",
+      "keywords": [
+        "careers@acme",
+        "se-backend"
+      ],
+      "answer": "To apply, candidates should email careers@acme.example with the subject line \"SE-Backend-2026\", including their resume and a short note about a backend project they shipped [1].",
+      "actualSrc": "p2 @0.60; p1 @0.56",
+      "result": "PASS"
+    },
+    {
+      "id": "A8",
+      "doc": "A",
+      "q": "What is the capital of France?",
+      "expect": "Refuse / not in document",
+      "expectSrc": "—",
+      "keywords": [],
+      "offTopic": true,
+      "answer": "I cannot find that information in the document.",
+      "actualSrc": "p1 @0.48; p2 @0.46",
+      "result": "PASS"
+    },
+    {
+      "id": "B1",
+      "doc": "B",
+      "q": "When did this policy become effective?",
+      "expect": "1 January 2026",
+      "expectSrc": "B p1",
+      "keywords": [
+        "january",
+        "2026"
+      ],
+      "answer": "This policy became effective on 1 January 2026 [1].",
+      "actualSrc": "p1 @0.64; p2 @0.59",
+      "result": "PASS"
+    },
+    {
+      "id": "B2",
+      "doc": "B",
+      "q": "Within how many days can a monthly Pro subscription be refunded?",
+      "expect": "14 days if fewer than 3 uploads",
+      "expectSrc": "B p1",
+      "keywords": [
+        "14"
+      ],
+      "answer": "A monthly Pro subscription may be refunded within 14 days of purchase [1].",
+      "actualSrc": "p1 @0.72; p2 @0.65",
+      "result": "PASS"
+    },
+    {
+      "id": "B3",
+      "doc": "B",
+      "q": "What is the refund window for annual Pro?",
+      "expect": "30 days",
+      "expectSrc": "B p1",
+      "keywords": [
+        "30"
+      ],
+      "answer": "Annual Pro subscriptions may be refunded within 30 days of purchase, provided the customer has used fewer than 3 document uploads in that billing period [1].",
+      "actualSrc": "p1 @0.72; p2 @0.66",
+      "result": "PASS"
+    },
+    {
+      "id": "B4",
+      "doc": "B",
+      "q": "Are partially used credit packs refundable?",
+      "expect": "No",
+      "expectSrc": "B p1",
+      "keywords": [
+        "not refundable",
+        "non-refundable",
+        "are not",
+        "no"
+      ],
+      "answer": "No, partially used credit packs are not refundable [2].",
+      "actualSrc": "p1 @0.71; p2 @0.68",
+      "result": "PASS"
+    },
+    {
+      "id": "B5",
+      "doc": "B",
+      "q": "How long after approval until money returns?",
+      "expect": "7 business days",
+      "expectSrc": "B p1",
+      "keywords": [
+        "7"
+      ],
+      "answer": "Refunds are processed to the original payment method within 7 business days after approval [1].",
+      "actualSrc": "p1 @0.64; p2 @0.60",
+      "result": "PASS"
+    },
+    {
+      "id": "B6",
+      "doc": "B",
+      "q": "How do I request a refund and what must I include?",
+      "expect": "billing@acme.example + email, invoice, reason",
+      "expectSrc": "B p2",
+      "keywords": [
+        "billing@acme",
+        "invoice"
+      ],
+      "answer": "To request a refund, email billing@acme.example with the following information:\n- Account email [1]\n- Invoice ID [1]\n- Reason for the request [1]",
+      "actualSrc": "p2 @0.67; p1 @0.67",
+      "result": "PASS"
+    },
+    {
+      "id": "B7",
+      "doc": "B",
+      "q": "What happens with unexplained chargebacks?",
+      "expect": "Account suspension pending review",
+      "expectSrc": "B p2",
+      "keywords": [
+        "suspend"
+      ],
+      "answer": "Unexplained chargebacks may result in account suspension pending review [1].",
+      "actualSrc": "p2 @0.65; p1 @0.60",
+      "result": "FAIL"
+    },
+    {
+      "id": "B8",
+      "doc": "B",
+      "q": "Can I get a refund after 60 days on a monthly plan?",
+      "expect": "No — outside 14-day window",
+      "expectSrc": "B p2",
+      "keywords": [
+        "no",
+        "not",
+        "14",
+        "window",
+        "eligible"
+      ],
+      "answer": "No, charges older than the refund windows (which are 14 days for monthly Pro subscriptions) are non-refundable [1], [2].",
+      "actualSrc": "p1 @0.69; p2 @0.66",
+      "result": "PARTIAL"
+    },
+    {
+      "id": "C1",
+      "doc": "C",
+      "q": "Which Slack workspace should interns join?",
+      "expect": "acme-eng-interns",
+      "expectSrc": "C p1",
+      "keywords": [
+        "acme-eng-interns"
+      ],
+      "answer": "Interns should join the Slack workspace: `acme-eng-interns` [1].",
+      "actualSrc": "p1 @0.70; p2 @0.65",
+      "result": "PASS"
+    },
+    {
+      "id": "C2",
+      "doc": "C",
+      "q": "By when must security training SEC-101 be completed?",
+      "expect": "Before Day 3",
+      "expectSrc": "C p1",
+      "keywords": [
+        "day 3",
+        "sec-101"
+      ],
+      "answer": "Security training module SEC-101 must be completed before Day 3 [2].",
+      "actualSrc": "p2 @0.59; p1 @0.58",
+      "result": "PARTIAL"
+    },
+    {
+      "id": "C3",
+      "doc": "C",
+      "q": "How long are weekly mentor meetings?",
+      "expect": "30 minutes; first by Friday Week 1",
+      "expectSrc": "C p1",
+      "keywords": [
+        "30"
+      ],
+      "answer": "Weekly mentor meetings are 30 minutes long [1].",
+      "actualSrc": "p1 @0.62; p2 @0.61",
+      "result": "PASS"
+    },
+    {
+      "id": "C4",
+      "doc": "C",
+      "q": "What are core office hours?",
+      "expect": "11:00–16:00 IST",
+      "expectSrc": "C p2",
+      "keywords": [
+        "11",
+        "16"
+      ],
+      "answer": "Core hours are 11:00–16:00 IST for hybrid collaboration [1].",
+      "actualSrc": "p2 @0.61; p1 @0.57",
+      "result": "PASS"
+    },
+    {
+      "id": "C5",
+      "doc": "C",
+      "q": "When do interns present their demo and how long is it?",
+      "expect": "Week 8; 10-minute demo",
+      "expectSrc": "C p2",
+      "keywords": [
+        "week 8",
+        "10"
+      ],
+      "answer": "Interns present a 10-minute demo in Week 8 [1].",
+      "actualSrc": "p2 @0.66; p1 @0.63",
+      "result": "PASS"
+    },
+    {
+      "id": "C6",
+      "doc": "C",
+      "q": "Should interns commit .env files to git?",
+      "expect": "No — do not commit secrets",
+      "expectSrc": "C p1",
+      "keywords": [
+        "not",
+        "secret",
+        "do not",
+        "never",
+        "no"
+      ],
+      "answer": "No, interns should not commit secrets like `.env` files to git [1].",
+      "actualSrc": "p2 @0.73; p1 @0.67",
+      "result": "PARTIAL"
+    }
+  ]
+}
