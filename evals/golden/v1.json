@@ -1,0 +1,189 @@
+{
+  "id": "golden-v1",
+  "version": 1,
+  "description": "DocBot Acme fixture golden set (Phase 8 / 14.5)",
+  "fixtures": [
+    { "id": "eval-doc-a", "label": "A", "file": "acme-software-engineer-jd.pdf" },
+    { "id": "eval-doc-b", "label": "B", "file": "acme-refund-policy.pdf" },
+    { "id": "eval-doc-c", "label": "C", "file": "acme-intern-onboarding.pdf" }
+  ],
+  "questions": [
+    {
+      "id": "A1",
+      "doc": "A",
+      "q": "What is the job title and location?",
+      "expect": "Software Engineer (Backend); Bengaluru; Hybrid 3 days",
+      "expectSrc": "A p1",
+      "keywords": ["software engineer", "bengaluru", "hybrid"]
+    },
+    {
+      "id": "A2",
+      "doc": "A",
+      "q": "What is the minimum years of experience required?",
+      "expect": "2 years",
+      "expectSrc": "A p1",
+      "keywords": ["2 year"]
+    },
+    {
+      "id": "A3",
+      "doc": "A",
+      "q": "Which programming languages are required?",
+      "expect": "TypeScript or JavaScript",
+      "expectSrc": "A p1",
+      "keywords": ["typescript", "javascript"]
+    },
+    {
+      "id": "A4",
+      "doc": "A",
+      "q": "Is a CS degree mandatory?",
+      "expect": "CS/IT or equivalent practical experience",
+      "expectSrc": "A p1",
+      "keywords": ["equivalent", "computer science", "bachelor"]
+    },
+    {
+      "id": "A5",
+      "doc": "A",
+      "q": "What AWS-related preference is listed?",
+      "expect": "AWS S3/Lambda/ECS preferred",
+      "expectSrc": "A p2",
+      "keywords": ["aws", "preferred"]
+    },
+    {
+      "id": "A6",
+      "doc": "A",
+      "q": "What is the salary range?",
+      "expect": "INR 18,00,000 to 28,00,000",
+      "expectSrc": "A p2",
+      "keywords": ["18", "28"]
+    },
+    {
+      "id": "A7",
+      "doc": "A",
+      "q": "How do candidates apply?",
+      "expect": "careers@acme.example subject SE-Backend-2026",
+      "expectSrc": "A p2",
+      "keywords": ["careers@acme", "se-backend"]
+    },
+    {
+      "id": "A8",
+      "doc": "A",
+      "q": "What is the capital of France?",
+      "expect": "Refuse / not in document",
+      "expectSrc": "—",
+      "keywords": [],
+      "offTopic": true
+    },
+    {
+      "id": "B1",
+      "doc": "B",
+      "q": "When did this policy become effective?",
+      "expect": "1 January 2026",
+      "expectSrc": "B p1",
+      "keywords": ["january", "2026"]
+    },
+    {
+      "id": "B2",
+      "doc": "B",
+      "q": "Within how many days can a monthly Pro subscription be refunded?",
+      "expect": "14 days if fewer than 3 uploads",
+      "expectSrc": "B p1",
+      "keywords": ["14"]
+    },
+    {
+      "id": "B3",
+      "doc": "B",
+      "q": "What is the refund window for annual Pro?",
+      "expect": "30 days",
+      "expectSrc": "B p1",
+      "keywords": ["30"]
+    },
+    {
+      "id": "B4",
+      "doc": "B",
+      "q": "Are partially used credit packs refundable?",
+      "expect": "No",
+      "expectSrc": "B p1",
+      "keywords": ["not refundable", "non-refundable", "are not", "no"]
+    },
+    {
+      "id": "B5",
+      "doc": "B",
+      "q": "How long after approval until money returns?",
+      "expect": "7 business days",
+      "expectSrc": "B p1",
+      "keywords": ["7"]
+    },
+    {
+      "id": "B6",
+      "doc": "B",
+      "q": "How do I request a refund and what must I include?",
+      "expect": "billing@acme.example + email, invoice, reason",
+      "expectSrc": "B p2",
+      "keywords": ["billing@acme", "invoice"]
+    },
+    {
+      "id": "B7",
+      "doc": "B",
+      "q": "What happens with unexplained chargebacks?",
+      "expect": "Account suspension pending review",
+      "expectSrc": "B p2",
+      "keywords": ["suspend"]
+    },
+    {
+      "id": "B8",
+      "doc": "B",
+      "q": "Can I get a refund after 60 days on a monthly plan?",
+      "expect": "No — outside 14-day window",
+      "expectSrc": "B p2",
+      "keywords": ["no", "not", "14", "window", "eligible"]
+    },
+    {
+      "id": "C1",
+      "doc": "C",
+      "q": "Which Slack workspace should interns join?",
+      "expect": "acme-eng-interns",
+      "expectSrc": "C p1",
+      "keywords": ["acme-eng-interns"]
+    },
+    {
+      "id": "C2",
+      "doc": "C",
+      "q": "By when must security training SEC-101 be completed?",
+      "expect": "Before Day 3",
+      "expectSrc": "C p1",
+      "keywords": ["day 3", "sec-101"]
+    },
+    {
+      "id": "C3",
+      "doc": "C",
+      "q": "How long are weekly mentor meetings?",
+      "expect": "30 minutes; first by Friday Week 1",
+      "expectSrc": "C p1",
+      "keywords": ["30"]
+    },
+    {
+      "id": "C4",
+      "doc": "C",
+      "q": "What are core office hours?",
+      "expect": "11:00–16:00 IST",
+      "expectSrc": "C p2",
+      "keywords": ["11", "16"]
+    },
+    {
+      "id": "C5",
+      "doc": "C",
+      "q": "When do interns present their demo and how long is it?",
+      "expect": "Week 8; 10-minute demo",
+      "expectSrc": "C p2",
+      "keywords": ["week 8", "10"]
+    },
+    {
+      "id": "C6",
+      "doc": "C",
+      "q": "Should interns commit .env files to git?",
+      "expect": "No — do not commit secrets",
+      "expectSrc": "C p1",
+      "keywords": ["not", "secret", "do not", "never", "no"]
+    }
+  ]
+}

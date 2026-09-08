@@ -16,7 +16,9 @@
     "supabase:start": "npx supabase start",
     "supabase:stop": "npx supabase stop",
     "supabase:status": "npx supabase status",
-    "supabase:env": "node scripts/sync-supabase-env.mjs"
+    "supabase:env": "node scripts/sync-supabase-env.mjs",
+    "eval": "node evals/run-harness.mjs",
+    "eval:baseline": "node evals/run-baseline.mjs"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

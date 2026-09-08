@@ -4,7 +4,7 @@
 
 ### Docs
 - `Phases.md` updated: Phases 0–7 marked complete; Phases 8–14 locked with exit criteria
-- Immediate next work: **Phase 14.4** Monetization — or **14.5** formal eval (Stripe still off by default)
+- Immediate next work: **Phase 14.6 Collaboration** (last) — or **14.4 Monetization** only if enabling Stripe
 - Rule: upgrade the single RAG pipeline; no parallel RAG stacks
 
 ### Current production reality
@@ -25,8 +25,15 @@ Document → ingest → chunks → embed → Pinecone
 
 ### Next slice
 1. ~~Phase 8–13~~ **DONE**  
-2. ~~Phase 14.1–14.3~~ **DONE (code)**  
-3. **Phase 14.4** monetization polish (optional) or **14.5** eval harness  
+2. ~~Phase 14.1–14.3 + 14.5~~ **DONE (code)**  
+3. **Phase 14.4** monetization deferred (`BILLING_ENABLED=false`)  
+4. **Phase 14.6** collaboration (last)  
+
+### 2026-09-08 — Phase 14.5 complete (code)
+- Golden set: `evals/golden/v1.json` (22 Qs); baseline runner loads it
+- Formal harness: `npm run eval` → PASS/citation/retrieval/keyword/groundedness + stage latency P50/P70/P95
+- Regression vs `harness-latest.json` (exit 2 on >5pp PASS drop or more FAILs)
+- `SKIP_INGEST=1` for fast re-asks; 14.4 Stripe intentionally skipped
 
 ### 2026-09-08 — Phase 14.3 complete (code)
 - `IngestJob` table + local JSON fallback; upload/URL enqueue and return **202** while `processing`
@@ -70,7 +77,7 @@ Document → ingest → chunks → embed → Pinecone
 - Re-upload older docs to generate overview
 
 ### Go / no-go after Phase 8
-- **Provisional YES → Phase 9…13 + 14.1–14.3 shipped; 14.4/14.5 next** (12 only if needed)
+- **Provisional YES → Phase 9…13 + 14.1–14.3 + 14.5 shipped; 14.6 next** (14.4 deferred; 12 only if needed)
 
 ### 2026-09-08 — Phase 8.4 complete (code)
 - `lib/grounding.ts`: score floor + lexical mismatch gate + strict prompt rules

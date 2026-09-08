@@ -287,12 +287,18 @@ Build as sub-phases. Collaboration last.
 - [ ] Usage limits / Pro quotas  
 - [ ] Subscription management polish  
 
+**Note:** Deferred while `BILLING_ENABLED=false` (demo Pro). Do not flip on without an explicit product decision.
+
 ### 14.5 — Formal RAG evaluation
 
-- [ ] Golden questions harness  
-- [ ] Retrieval metrics, answer quality, citation correctness, groundedness  
-- [ ] Latency + regression tracking  
-- [ ] Automated evaluation where practical  
+- [x] Golden questions harness (`evals/golden/v1.json` + `npm run eval`)  
+- [x] Retrieval metrics, answer quality, citation correctness, groundedness  
+- [x] Latency + regression tracking (`harness-latest.json`, exit 2 on regress)  
+- [x] Automated evaluation where practical (CLI harness; CI-ready exit codes)  
+
+**Exit criteria**
+
+- [x] One command re-runs the golden set with PASS rate + latency + regression vs prior run  
 
 ### 14.6 — Collaboration (last)
 

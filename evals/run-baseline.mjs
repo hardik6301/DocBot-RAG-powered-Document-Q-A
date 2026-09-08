@@ -8,6 +8,11 @@ import { fileURLToPath } from "url";
 import { randomUUID } from "crypto";
 import { Pinecone } from "@pinecone-database/pinecone";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import {
+  gradeCase,
+  aggregateMetrics,
+  compareRegression,
+} from "./lib/metrics.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, "..");
@@ -44,6 +49,8 @@ const CHUNK_SIZE = 2000;
 const CHUNK_OVERLAP = 200;
 const CONTEXTUAL = process.env.CONTEXTUAL === "1";
 const RERANK = process.env.RERANK !== "0"; // default ON to match app Phase 8.3
+const HARNESS = process.env.HARNESS === "1" || process.argv.includes("--harness");
+const SKIP_INGEST = process.env.SKIP_INGEST === "1";
 const NS = CONTEXTUAL
   ? RERANK
     ? "eval-baseline-v3-contextual-rerank"
@@ -55,208 +62,19 @@ const RETRIEVE_K = RERANK ? 15 : 5;
 const TOP_K = RERANK ? 5 : 5;
 const SCORE_MIN = 0.15;
 
-const DOCS = [
-  {
-    id: "eval-doc-a",
-    label: "A",
-    file: "acme-software-engineer-jd.pdf",
-    filename: "acme-software-engineer-jd.pdf",
-  },
-  {
-    id: "eval-doc-b",
-    label: "B",
-    file: "acme-refund-policy.pdf",
-    filename: "acme-refund-policy.pdf",
-  },
-  {
-    id: "eval-doc-c",
-    label: "C",
-    file: "acme-intern-onboarding.pdf",
-    filename: "acme-intern-onboarding.pdf",
-  },
-];
+const golden = JSON.parse(
+  readFileSync(join(__dirname, "golden", "v1.json"), "utf8"),
+);
+
+const DOCS = golden.fixtures.map((f) => ({
+  id: f.id,
+  label: f.label,
+  file: f.file,
+  filename: f.file,
+}));
 
 /** @type {{id:string,doc:string,q:string,expect:string,expectSrc:string,keywords:string[],offTopic?:boolean}[]} */
-const QUESTIONS = [
-  {
-    id: "A1",
-    doc: "A",
-    q: "What is the job title and location?",
-    expect: "Software Engineer (Backend); Bengaluru; Hybrid 3 days",
-    expectSrc: "A p1",
-    keywords: ["software engineer", "bengaluru", "hybrid"],
-  },
-  {
-    id: "A2",
-    doc: "A",
-    q: "What is the minimum years of experience required?",
-    expect: "2 years",
-    expectSrc: "A p1",
-    keywords: ["2 year"],
-  },
-  {
-    id: "A3",
-    doc: "A",
-    q: "Which programming languages are required?",
-    expect: "TypeScript or JavaScript",
-    expectSrc: "A p1",
-    keywords: ["typescript", "javascript"],
-  },
-  {
-    id: "A4",
-    doc: "A",
-    q: "Is a CS degree mandatory?",
-    expect: "CS/IT or equivalent practical experience",
-    expectSrc: "A p1",
-    keywords: ["equivalent", "computer science", "bachelor"],
-  },
-  {
-    id: "A5",
-    doc: "A",
-    q: "What AWS-related preference is listed?",
-    expect: "AWS S3/Lambda/ECS preferred",
-    expectSrc: "A p2",
-    keywords: ["aws", "preferred"],
-  },
-  {
-    id: "A6",
-    doc: "A",
-    q: "What is the salary range?",
-    expect: "INR 18,00,000 to 28,00,000",
-    expectSrc: "A p2",
-    keywords: ["18", "28"],
-  },
-  {
-    id: "A7",
-    doc: "A",
-    q: "How do candidates apply?",
-    expect: "careers@acme.example subject SE-Backend-2026",
-    expectSrc: "A p2",
-    keywords: ["careers@acme", "se-backend"],
-  },
-  {
-    id: "A8",
-    doc: "A",
-    q: "What is the capital of France?",
-    expect: "Refuse / not in document",
-    expectSrc: "—",
-    keywords: [],
-    offTopic: true,
-  },
-  {
-    id: "B1",
-    doc: "B",
-    q: "When did this policy become effective?",
-    expect: "1 January 2026",
-    expectSrc: "B p1",
-    keywords: ["january", "2026"],
-  },
-  {
-    id: "B2",
-    doc: "B",
-    q: "Within how many days can a monthly Pro subscription be refunded?",
-    expect: "14 days if fewer than 3 uploads",
-    expectSrc: "B p1",
-    keywords: ["14"],
-  },
-  {
-    id: "B3",
-    doc: "B",
-    q: "What is the refund window for annual Pro?",
-    expect: "30 days",
-    expectSrc: "B p1",
-    keywords: ["30"],
-  },
-  {
-    id: "B4",
-    doc: "B",
-    q: "Are partially used credit packs refundable?",
-    expect: "No",
-    expectSrc: "B p1",
-    keywords: ["not refundable", "non-refundable", "are not", "no"],
-  },
-  {
-    id: "B5",
-    doc: "B",
-    q: "How long after approval until money returns?",
-    expect: "7 business days",
-    expectSrc: "B p1",
-    keywords: ["7"],
-  },
-  {
-    id: "B6",
-    doc: "B",
-    q: "How do I request a refund and what must I include?",
-    expect: "billing@acme.example + email, invoice, reason",
-    expectSrc: "B p2",
-    keywords: ["billing@acme", "invoice"],
-  },
-  {
-    id: "B7",
-    doc: "B",
-    q: "What happens with unexplained chargebacks?",
-    expect: "Account suspension pending review",
-    expectSrc: "B p2",
-    keywords: ["suspend"],
-  },
-  {
-    id: "B8",
-    doc: "B",
-    q: "Can I get a refund after 60 days on a monthly plan?",
-    expect: "No — outside 14-day window",
-    expectSrc: "B p2",
-    keywords: ["no", "not", "14", "window", "eligible"],
-  },
-  {
-    id: "C1",
-    doc: "C",
-    q: "Which Slack workspace should interns join?",
-    expect: "acme-eng-interns",
-    expectSrc: "C p1",
-    keywords: ["acme-eng-interns"],
-  },
-  {
-    id: "C2",
-    doc: "C",
-    q: "By when must security training SEC-101 be completed?",
-    expect: "Before Day 3",
-    expectSrc: "C p1",
-    keywords: ["day 3", "sec-101"],
-  },
-  {
-    id: "C3",
-    doc: "C",
-    q: "How long are weekly mentor meetings?",
-    expect: "30 minutes; first by Friday Week 1",
-    expectSrc: "C p1",
-    keywords: ["30"],
-  },
-  {
-    id: "C4",
-    doc: "C",
-    q: "What are core office hours?",
-    expect: "11:00–16:00 IST",
-    expectSrc: "C p2",
-    keywords: ["11", "16"],
-  },
-  {
-    id: "C5",
-    doc: "C",
-    q: "When do interns present their demo and how long is it?",
-    expect: "Week 8; 10-minute demo",
-    expectSrc: "C p2",
-    keywords: ["week 8", "10"],
-  },
-  {
-    id: "C6",
-    doc: "C",
-    q: "Should interns commit .env files to git?",
-    expect: "No — do not commit secrets",
-    expectSrc: "C p1",
-    keywords: ["not", "secret", "do not", "never", "no"],
-  },
-];
-
+const QUESTIONS = golden.questions;
 function l2Normalize(values) {
   let sum = 0;
   for (const v of values) sum += v * v;
@@ -578,35 +396,6 @@ ANSWER:`;
   throw lastError;
 }
 
-function scoreAnswer(row, answer, sources) {
-  const a = (answer || "").toLowerCase();
-  const refuse =
-    /could not find|couldn't find|cannot find|can't find|not (found|in|mentioned)|insufficient|no (relevant )?information|don't know|do not contain|uploaded document/i.test(
-      answer || "",
-    );
-
-  if (row.offTopic) {
-    const leakedParis = /paris/i.test(answer || "") && !refuse;
-    if (refuse && !leakedParis) return "PASS";
-    if (leakedParis) return "FAIL";
-    return "PARTIAL";
-  }
-
-  if (refuse) return "FAIL";
-
-  const hits = row.keywords.filter((k) => a.includes(k.toLowerCase()));
-  const need = Math.max(1, Math.ceil(row.keywords.length * 0.5));
-  const srcPage = sources[0]?.page;
-  const expectPage = row.expectSrc.match(/p(\d+)/)?.[1];
-  const pageOk =
-    !expectPage || srcPage == null || String(srcPage) === expectPage;
-
-  if (hits.length >= need && pageOk) return "PASS";
-  if (hits.length >= need) return "PARTIAL";
-  if (hits.length > 0) return "PARTIAL";
-  return "FAIL";
-}
-
 function escCell(s) {
   return String(s ?? "")
     .replace(/\|/g, "\\|")
@@ -615,64 +404,93 @@ function escCell(s) {
 }
 
 async function main() {
-  console.log("Namespace:", NS, "contextual=", CONTEXTUAL, "rerank=", RERANK);
+  console.log(
+    "Namespace:",
+    NS,
+    "contextual=",
+    CONTEXTUAL,
+    "rerank=",
+    RERANK,
+    "harness=",
+    HARNESS,
+  );
   const index = await getIndex();
 
-  try {
-    await index.deleteAll({ namespace: NS });
-    console.log("Cleared eval namespace");
-  } catch (e) {
-    console.warn("deleteAll skipped:", e.message?.slice(0, 80));
+  if (!SKIP_INGEST) {
+    try {
+      await index.deleteAll({ namespace: NS });
+      console.log("Cleared eval namespace");
+    } catch (e) {
+      console.warn("deleteAll skipped:", e.message?.slice(0, 80));
+    }
+
+    for (const doc of DOCS) {
+      const abs = join(__dirname, "fixtures", doc.file);
+      console.log("Ingesting", doc.file);
+      const pages = await loadPdf(abs);
+      const chunks = splitPages(pages);
+      console.log(
+        `  pages=${pages.length} chunks=${chunks.length} contextual=${CONTEXTUAL}`,
+      );
+      const preview = pages
+        .map((p) => `Page ${p.page}: ${p.text}`)
+        .join("\n\n");
+      let embedInputs = chunks.map((c) => c.text);
+      if (CONTEXTUAL) {
+        embedInputs = [];
+        for (const c of chunks) {
+          const prefix = await buildContextualPrefix(doc.filename, preview, c);
+          embedInputs.push(prefix ? `${prefix}\n\n${c.text}` : c.text);
+          await sleep(200);
+        }
+      }
+      const vectors = await embedTexts(embedInputs);
+      const records = chunks.map((c, i) => ({
+        id: `${doc.id}-${c.index}-${randomUUID().slice(0, 8)}`,
+        values: vectors[i],
+        metadata: {
+          filename: doc.filename,
+          page: c.page,
+          chunkText: c.text,
+          docId: doc.id,
+          userId: NS,
+        },
+      }));
+      await upsertChunks(index, records);
+    }
+
+    // Pinecone eventual consistency
+    await sleep(2000);
+  } else {
+    console.log("SKIP_INGEST=1 — reusing vectors in", NS);
   }
 
   const docByLabel = Object.fromEntries(DOCS.map((d) => [d.label, d]));
-
-  for (const doc of DOCS) {
-    const abs = join(__dirname, "fixtures", doc.file);
-    console.log("Ingesting", doc.file);
-    const pages = await loadPdf(abs);
-    const chunks = splitPages(pages);
-    console.log(`  pages=${pages.length} chunks=${chunks.length} contextual=${CONTEXTUAL}`);
-    const preview = pages.map((p) => `Page ${p.page}: ${p.text}`).join("\n\n");
-    let embedInputs = chunks.map((c) => c.text);
-    if (CONTEXTUAL) {
-      embedInputs = [];
-      for (const c of chunks) {
-        const prefix = await buildContextualPrefix(doc.filename, preview, c);
-        embedInputs.push(prefix ? `${prefix}\n\n${c.text}` : c.text);
-        await sleep(200);
-      }
-    }
-    const vectors = await embedTexts(embedInputs);
-    const records = chunks.map((c, i) => ({
-      id: `${doc.id}-${c.index}-${randomUUID().slice(0, 8)}`,
-      values: vectors[i],
-      metadata: {
-        filename: doc.filename,
-        page: c.page,
-        chunkText: c.text,
-        docId: doc.id,
-        userId: NS,
-      },
-    }));
-    await upsertChunks(index, records);
-  }
-
-  // Pinecone eventual consistency
-  await sleep(2000);
 
   const rows = [];
   for (const q of QUESTIONS) {
     process.stdout.write(`Q ${q.id}… `);
     const doc = docByLabel[q.doc];
+    const t0 = Date.now();
+
+    const tEmbed = Date.now();
     const vector = await embedOne(q.q, "RETRIEVAL_QUERY");
+    const embedMs = Date.now() - tEmbed;
+
+    const tRet = Date.now();
     const matches = await querySimilar(index, vector, doc.id);
+    const retrieveMs = Date.now() - tRet;
+
     const usable = matches.filter((m) => m.chunkText && m.score > SCORE_MIN);
+    const tRerank = Date.now();
     const ranked = RERANK
       ? await rerankChunks(q.q, usable, TOP_K)
       : usable.slice(0, TOP_K);
+    const rerankMs = RERANK ? Date.now() - tRerank : 0;
+
     let answer;
     let sources = [];
+    let generateMs = 0;
     if (ranked.length === 0) {
       answer =
         "I couldn't find information about that in the uploaded document.";
@@ -683,6 +501,7 @@ async function main() {
         filename: m.filename || doc.filename,
         score: m.score,
       }));
+      const tGen = Date.now();
       answer = await generateGroundedAnswer(
         q.q,
         sources.map((s) => ({
@@ -691,17 +510,27 @@ async function main() {
           filename: s.filename,
         })),
       );
+      generateMs = Date.now() - tGen;
     }
     const withScores = ranked
       .slice(0, 3)
       .map((m) => `p${m.page} @${(m.score ?? 0).toFixed(2)}`);
-    const result = scoreAnswer(q, answer, sources);
+    const metrics = gradeCase(q, answer, sources, ranked);
+    const result = metrics.result;
     console.log(result);
     rows.push({
       ...q,
       answer,
       actualSrc: withScores.join("; ") || "—",
       result,
+      metrics,
+      latency: {
+        embedMs,
+        retrieveMs,
+        rerankMs,
+        generateMs,
+        totalMs: Date.now() - t0,
+      },
     });
     await sleep(800);
   }
@@ -710,6 +539,7 @@ async function main() {
   const partial = rows.filter((r) => r.result === "PARTIAL").length;
   const fail = rows.filter((r) => r.result === "FAIL").length;
   const a8 = rows.find((r) => r.id === "A8");
+  const metrics = aggregateMetrics(rows);
 
   const byDoc = { A: [], B: [], C: [] };
   for (const r of rows) byDoc[r.doc].push(r);
@@ -727,13 +557,23 @@ async function main() {
     return lines.join("\n");
   }
 
-  const md = `# DocBot RAG Baseline v1 — FILLED
+  const runLabel = CONTEXTUAL
+    ? RERANK
+      ? "baseline-v3-contextual-rerank"
+      : "baseline-v2-contextual"
+    : RERANK
+      ? "baseline-v3-rerank"
+      : "baseline-v1";
 
-**Phase:** 8.1  
+  const md = `# DocBot RAG ${HARNESS ? "Harness" : "Baseline"} — FILLED
+
+**Phase:** ${HARNESS ? "14.5" : "8.x"}  
 **Run date:** ${new Date().toISOString()}  
-**Runner:** \`node evals/run-baseline.mjs\` (same retrieve→generate contract as \`/api/chat\`)  
+**Runner:** \`node evals/${HARNESS ? "run-harness.mjs" : "run-baseline.mjs"}\`  
+**Golden set:** \`evals/golden/v1.json\` (${golden.id})  
 **Namespace:** \`${NS}\`  
-**topK:** ${TOP_K}, score floor: ${SCORE_MIN}
+**Flags:** contextual=${CONTEXTUAL} rerank=${RERANK} skipIngest=${SKIP_INGEST}  
+**topK:** ${TOP_K}, retrieveK: ${RETRIEVE_K}, score floor: ${SCORE_MIN}
 
 ## Summary
 
@@ -745,12 +585,17 @@ async function main() {
 | FAIL | ${fail} |
 | PASS rate (PASS / total) | ${((pass / rows.length) * 100).toFixed(1)}% |
 | Off-topic refusal (A8) | ${a8?.result ?? "n/a"} |
+| Citation page hit rate | ${metrics.citationPageHitRate == null ? "—" : `${(metrics.citationPageHitRate * 100).toFixed(1)}%`} |
+| Retrieval page hit rate | ${metrics.retrievalPageHitRate == null ? "—" : `${(metrics.retrievalPageHitRate * 100).toFixed(1)}%`} |
+| Keyword hit rate (avg) | ${metrics.keywordHitRate == null ? "—" : `${(metrics.keywordHitRate * 100).toFixed(1)}%`} |
+| Latency P50 total | ${metrics.latency.totalMs?.p50 ?? "—"} ms |
+| Latency P95 total | ${metrics.latency.totalMs?.p95 ?? "—"} ms |
 
 ### Observed failure patterns
 
 ${fail + partial === 0 ? "- None (all PASS)" : ""}
 ${rows.some((r) => r.result !== "PASS" && !r.offTopic) ? "- See non-PASS rows below for missed keywords / page mismatch / weak retrieval" : ""}
-${a8?.result === "FAIL" ? "- Off-topic answered with Paris (guardrail gap — Phase 8.4)" : ""}
+${a8?.result === "FAIL" ? "- Off-topic answered with Paris (guardrail gap)" : ""}
 ${a8?.result === "PASS" ? "- Off-topic correctly refused" : ""}
 
 ## Document A — Software Engineer JD
@@ -764,33 +609,89 @@ ${table(byDoc.B)}
 ## Document C — Intern Onboarding
 
 ${table(byDoc.C)}
-
-## Phase 8.1 exit checklist
-
-- [x] Fixtures chosen  
-- [x] Questions + expected answers  
-- [x] Baseline executed on current RAG path  
-- [x] Actual columns filled  
-- [x] PASS/FAIL marked  
-- [x] Failure patterns noted  
 `;
 
   mkdirSync(join(__dirname, "results"), { recursive: true });
-  const outName = CONTEXTUAL
-    ? RERANK
-      ? "baseline-v3-contextual-rerank-filled.md"
-      : "baseline-v2-contextual-filled.md"
-    : RERANK
-      ? "baseline-v3-rerank-filled.md"
-      : "baseline-v1-filled.md";
+  const outName = `${runLabel}-filled.md`;
   const outPath = join(__dirname, "results", outName);
   writeFileSync(outPath, md);
   writeFileSync(
     join(__dirname, "results", outName.replace("-filled.md", "-raw.json")),
-    JSON.stringify({ pass, partial, fail, rows }, null, 2),
+    JSON.stringify({ pass, partial, fail, metrics, rows }, null, 2),
   );
   console.log("\nWrote", outPath);
   console.log(`PASS ${pass} / PARTIAL ${partial} / FAIL ${fail}`);
+
+  if (HARNESS) {
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+    const report = {
+      id: `harness-${stamp}`,
+      at: new Date().toISOString(),
+      golden: golden.id,
+      namespace: NS,
+      flags: { CONTEXTUAL, RERANK, SKIP_INGEST },
+      metrics,
+      rows: rows.map((r) => ({
+        id: r.id,
+        result: r.result,
+        metrics: r.metrics,
+        latency: r.latency,
+        actualSrc: r.actualSrc,
+      })),
+    };
+
+    const latestPath = join(__dirname, "results", "harness-latest.json");
+    let previous = null;
+    try {
+      previous = JSON.parse(readFileSync(latestPath, "utf8"));
+    } catch {
+      /* first run */
+    }
+    const regression = compareRegression(report, previous);
+    report.regression = regression;
+
+    writeFileSync(latestPath, JSON.stringify(report, null, 2));
+    writeFileSync(
+      join(__dirname, "results", `harness-${stamp}.json`),
+      JSON.stringify(report, null, 2),
+    );
+
+    const harnessMd = `# DocBot formal RAG harness
+
+**Run:** ${report.id}  
+**Golden:** ${golden.id}  
+**PASS rate:** ${(metrics.passRate * 100).toFixed(1)}% (${pass}/${rows.length})  
+**Regression:** ${regression.regress ? "**YES — investigate**" : "no"}  
+
+${regression.notes.map((n) => `- ${n}`).join("\n")}
+
+## Latency (ms)
+
+| Stage | P50 | P70 | P95 | max |
+|-------|----:|----:|----:|----:|
+| Embed | ${metrics.latency.embedMs?.p50 ?? "—"} | ${metrics.latency.embedMs?.p70 ?? "—"} | ${metrics.latency.embedMs?.p95 ?? "—"} | ${metrics.latency.embedMs?.max ?? "—"} |
+| Retrieve | ${metrics.latency.retrieveMs?.p50 ?? "—"} | ${metrics.latency.retrieveMs?.p70 ?? "—"} | ${metrics.latency.retrieveMs?.p95 ?? "—"} | ${metrics.latency.retrieveMs?.max ?? "—"} |
+| Rerank | ${metrics.latency.rerankMs?.p50 ?? "—"} | ${metrics.latency.rerankMs?.p70 ?? "—"} | ${metrics.latency.rerankMs?.p95 ?? "—"} | ${metrics.latency.rerankMs?.max ?? "—"} |
+| Generate | ${metrics.latency.generateMs?.p50 ?? "—"} | ${metrics.latency.generateMs?.p70 ?? "—"} | ${metrics.latency.generateMs?.p95 ?? "—"} | ${metrics.latency.generateMs?.max ?? "—"} |
+| Total | ${metrics.latency.totalMs?.p50 ?? "—"} | ${metrics.latency.totalMs?.p70 ?? "—"} | ${metrics.latency.totalMs?.p95 ?? "—"} | ${metrics.latency.totalMs?.max ?? "—"} |
+
+## Quality
+
+| Metric | Value |
+|--------|------:|
+| Citation page hit | ${metrics.citationPageHitRate == null ? "—" : `${(metrics.citationPageHitRate * 100).toFixed(1)}%`} |
+| Retrieval page hit | ${metrics.retrievalPageHitRate == null ? "—" : `${(metrics.retrievalPageHitRate * 100).toFixed(1)}%`} |
+| Keyword hit (avg) | ${metrics.keywordHitRate == null ? "—" : `${(metrics.keywordHitRate * 100).toFixed(1)}%`} |
+| Groundedness (off-topic) | ${metrics.groundednessOffTopicRate == null ? "—" : `${(metrics.groundednessOffTopicRate * 100).toFixed(1)}%`} |
+| Groundedness (on-topic) | ${metrics.groundednessOnTopicRate == null ? "—" : `${(metrics.groundednessOnTopicRate * 100).toFixed(1)}%`} |
+`;
+    writeFileSync(join(__dirname, "results", "harness-latest.md"), harnessMd);
+    console.log("Wrote harness-latest.json / harness-latest.md");
+    if (regression.regress) {
+      console.warn("REGRESSION detected vs previous harness-latest");
+      process.exitCode = 2;
+    }
+  }
 }
 
 main().catch((e) => {
