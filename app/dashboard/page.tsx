@@ -8,10 +8,23 @@ import FileUpload from "@/components/upload/FileUpload";
 import UrlImport from "@/components/upload/UrlImport";
 import ProcessingStatus from "@/components/upload/ProcessingStatus";
 import DocumentCard from "@/components/dashboard/DocumentCard";
+import DocumentTable from "@/components/dashboard/DocumentTable";
+import LibraryToolbar, {
+  type LibraryFilters,
+  type LibrarySort,
+  type LibraryView,
+} from "@/components/dashboard/LibraryToolbar";
 import Icon from "@/components/ui/Icon";
 import { useDocuments } from "@/hooks/useDocuments";
 import { documentMatchesQuery } from "@/lib/library-search";
 import { useWorkspace } from "@/components/layout/WorkspaceContext";
+
+const DEFAULT_FILTERS: LibraryFilters = {
+  status: "all",
+  fileType: "all",
+  folder: "all",
+  tag: "all",
+};
 
 function DashboardMain({
   query,
@@ -34,8 +47,10 @@ function DashboardMain({
     remove,
     patch,
   } = useDocuments();
-  const [tagFilter, setTagFilter] = useState<string | "all">("all");
   const [showArchived, setShowArchived] = useState(false);
+  const [view, setView] = useState<LibraryView>("grid");
+  const [sort, setSort] = useState<LibrarySort>("recent");
+  const [filters, setFilters] = useState<LibraryFilters>(DEFAULT_FILTERS);
 
   useEffect(() => {
     const q = searchParams.get("q");
@@ -68,15 +83,81 @@ function DashboardMain({
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [scopedDocs]);
 
+  const fileTypes = useMemo(() => {
+    const set = new Set<string>();
+    for (const d of scopedDocs) {
+      if (d.fileType) set.add(d.fileType);
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [scopedDocs]);
+
   const filtered = useMemo(() => {
-    return scopedDocs.filter((d) => {
+    const list = scopedDocs.filter((d) => {
       if (showArchived ? !d.archived : d.archived) return false;
-      if (tagFilter !== "all" && !(d.tags ?? []).includes(tagFilter)) {
+      if (filters.status !== "all" && d.status !== filters.status) return false;
+      if (filters.fileType !== "all" && d.fileType !== filters.fileType) {
+        return false;
+      }
+      if (filters.folder === "unfiled" && d.folder) return false;
+      if (
+        filters.folder !== "all" &&
+        filters.folder !== "unfiled" &&
+        d.folder !== filters.folder
+      ) {
+        return false;
+      }
+      if (filters.tag !== "all" && !(d.tags ?? []).includes(filters.tag)) {
         return false;
       }
       return documentMatchesQuery(d, query);
     });
-  }, [scopedDocs, query, tagFilter, showArchived]);
+
+    const sorted = [...list];
+    sorted.sort((a, b) => {
+      if (sort === "name-asc") {
+        return a.filename.localeCompare(b.filename);
+      }
+      if (sort === "name-desc") {
+        return b.filename.localeCompare(a.filename);
+      }
+      if (sort === "oldest") {
+        return (
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        );
+      }
+      if (sort === "updated") {
+        return (
+          new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+        );
+      }
+      // recent
+      return (
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+    });
+    return sorted;
+  }, [scopedDocs, query, showArchived, filters, sort]);
+
+  const cardHandlers = {
+    onDelete: (id: string) => {
+      if (confirm("Delete this document?")) void remove(id);
+    },
+    onRename: async (id: string, filename: string) => {
+      await patch(id, { filename });
+    },
+    onArchive: async (id: string, archived: boolean) => {
+      await patch(id, { archived });
+    },
+    onMoveFolder: async (id: string, folder: string | null) => {
+      await patch(id, { folder });
+    },
+    onSetTags: async (id: string, nextTags: string[]) => {
+      await patch(id, { tags: nextTags });
+    },
+    onRetry: async (id: string) => {
+      await retryIngest(id);
+    },
+  };
 
   return (
     <>
@@ -108,38 +189,6 @@ function DashboardMain({
               </div>
             </div>
           </header>
-
-          {tags.length > 0 && (
-            <div className="mb-4 flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => setTagFilter("all")}
-                className={`rounded-full px-3 py-1 text-[12px] ${
-                  tagFilter === "all"
-                    ? "bg-primary text-on-primary"
-                    : "bg-surface-container text-on-surface-variant"
-                }`}
-              >
-                All tags
-              </button>
-              {tags.map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() =>
-                    setTagFilter((cur) => (cur === t ? "all" : t))
-                  }
-                  className={`rounded-full px-3 py-1 text-[12px] ${
-                    tagFilter === t
-                      ? "bg-primary text-on-primary"
-                      : "bg-surface-container text-on-surface-variant"
-                  }`}
-                >
-                  #{t}
-                </button>
-              ))}
-            </div>
-          )}
 
           {atLimit && (
             <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-body-sm text-amber-900">
@@ -180,6 +229,22 @@ function DashboardMain({
             />
           </section>
 
+          {!loading && scopedDocs.length > 0 && (
+            <LibraryToolbar
+              view={view}
+              onViewChange={setView}
+              sort={sort}
+              onSortChange={setSort}
+              filters={filters}
+              onFiltersChange={setFilters}
+              showingCount={filtered.length}
+              showArchived={showArchived}
+              folders={folders}
+              tags={tags}
+              fileTypes={fileTypes}
+            />
+          )}
+
           {loading ? (
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
               {[1, 2, 3].map((i) => (
@@ -210,6 +275,17 @@ function DashboardMain({
                 {query.trim() ? ` “${query.trim()}”` : " these filters"}.
               </p>
             </div>
+          ) : view === "table" ? (
+            <DocumentTable
+              docs={filtered}
+              onDelete={cardHandlers.onDelete}
+              onArchive={(id, archived) => {
+                void cardHandlers.onArchive(id, archived);
+              }}
+              onRetry={(id) => {
+                void cardHandlers.onRetry(id);
+              }}
+            />
           ) : (
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
               {filtered.map((doc) => (
@@ -217,37 +293,31 @@ function DashboardMain({
                   key={doc.id}
                   doc={doc}
                   folders={folders}
-                  onDelete={(id) => {
-                    if (confirm("Delete this document?")) void remove(id);
-                  }}
-                  onRename={async (id, filename) => {
-                    await patch(id, { filename });
-                  }}
-                  onArchive={async (id, archived) => {
-                    await patch(id, { archived });
-                  }}
-                  onMoveFolder={async (id, folder) => {
-                    await patch(id, { folder });
-                  }}
-                  onSetTags={async (id, nextTags) => {
-                    await patch(id, { tags: nextTags });
-                  }}
-                  onRetry={async (id) => {
-                    await retryIngest(id);
-                  }}
+                  onDelete={cardHandlers.onDelete}
+                  onRename={cardHandlers.onRename}
+                  onArchive={cardHandlers.onArchive}
+                  onMoveFolder={cardHandlers.onMoveFolder}
+                  onSetTags={cardHandlers.onSetTags}
+                  onRetry={cardHandlers.onRetry}
                 />
               ))}
-              {!atLimit && !query.trim() && !showArchived && (
-                <div className="hidden h-72 flex-col items-center justify-center rounded-xl border-2 border-dashed border-outline-variant bg-surface-container-low text-center xl:flex">
-                  <Icon
-                    name="add_circle"
-                    className="mb-2 text-[48px] text-outline-variant"
-                  />
-                  <p className="font-mono text-label-caps text-outline">
-                    NEW DOCUMENT
-                  </p>
-                </div>
-              )}
+              {!atLimit &&
+                !query.trim() &&
+                !showArchived &&
+                filters.status === "all" &&
+                filters.fileType === "all" &&
+                filters.folder === "all" &&
+                filters.tag === "all" && (
+                  <div className="hidden h-72 flex-col items-center justify-center rounded-xl border-2 border-dashed border-outline-variant bg-surface-container-low text-center xl:flex">
+                    <Icon
+                      name="add_circle"
+                      className="mb-2 text-[48px] text-outline-variant"
+                    />
+                    <p className="font-mono text-label-caps text-outline">
+                      NEW DOCUMENT
+                    </p>
+                  </div>
+                )}
             </div>
           )}
         </div>
