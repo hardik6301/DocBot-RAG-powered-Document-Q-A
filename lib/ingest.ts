@@ -11,10 +11,13 @@ import {
   buildContextualTexts,
   documentPreviewFromPages,
 } from "@/lib/contextualize";
+import { analyzeDocumentIntelligence } from "@/lib/doc-intelligence";
+import type { DocumentIntelligence } from "@/lib/doc-intelligence";
 
 export type IngestResult = {
   pageCount: number;
   chunkCount: number;
+  intelligence: DocumentIntelligence | null;
 };
 
 /**
@@ -71,9 +74,15 @@ export async function ingestDocument(opts: {
 
     await upsertChunks(opts.userId, records);
 
+    const intelligence = await analyzeDocumentIntelligence({
+      filename: opts.filename,
+      documentText: preview,
+    });
+
     return {
       pageCount: pages.length,
       chunkCount: chunks.length,
+      intelligence,
     };
   } finally {
     await materialized.cleanup();

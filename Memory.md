@@ -4,7 +4,7 @@
 
 ### Docs
 - `Phases.md` updated: Phases 0–7 marked complete; Phases 8–14 locked with exit criteria
-- Immediate next work: **Phase 9 Document Intelligence** (Phase 8 code complete)
+- Immediate next work: **Phase 10 Document Comparison**
 - Rule: upgrade the single RAG pipeline; no parallel RAG stacks
 
 ### Current production reality
@@ -24,12 +24,17 @@ Document → ingest → chunks → embed → Pinecone
 ```
 
 ### Next slice
-1. ~~Phase 8.1–8.4~~ **DONE (code)** — quality loop shipped  
-2. **Phase 9** Document Intelligence (next) — unless eval regresses → Phase 12  
+1. ~~Phase 8–9~~ **DONE (code)**  
+2. **Phase 10** Document Comparison (next)  
+
+### 2026-09-08 — Phase 9 complete (code)
+- Columns: `summary`, `keyTopics`, `suggestedQuestions` on Document (Supabase migration applied)
+- `lib/doc-intelligence.ts` runs at end of ingest
+- Chat sidebar `AiOverview` + suggested Q → `onSend`
+- Re-upload older docs to generate overview
 
 ### Go / no-go after Phase 8
-- **Provisional YES → Phase 9** (v1 PASS 81.8%, A8 refused; 8.2–8.4 harden retrieve/ground)
-- Optional: `node evals/run-baseline.mjs` when quota allows
+- **Provisional YES → Phase 9** (shipped) → **Phase 10 next**
 
 ### 2026-09-08 — Phase 8.4 complete (code)
 - `lib/grounding.ts`: score floor + lexical mismatch gate + strict prompt rules

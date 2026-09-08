@@ -7,6 +7,7 @@ import Icon from "@/components/ui/Icon";
 import SourceCard from "@/components/chat/SourceCard";
 import ChatInput from "@/components/chat/ChatInput";
 import ExportChatButton from "@/components/chat/ExportChatButton";
+import AiOverview from "@/components/chat/AiOverview";
 import type { AppDocument, SourceCitation, StoredMessage } from "@/types";
 
 type UiMessage = StoredMessage & { typing?: boolean };
@@ -195,18 +196,22 @@ export default function ChatPage({ params }: { params: { docId: string } }) {
           </div>
 
           <div className="flex-1 space-y-stack-md overflow-y-auto p-stack-md">
-            <div className="aspect-[3/4] overflow-hidden rounded-lg border border-outline-variant bg-white shadow-sm">
-              <div className="flex h-full flex-col gap-2 bg-gradient-to-b from-surface-container-low to-white p-6">
-                <div className="h-3 w-2/3 rounded bg-surface-container" />
-                <div className="mt-4 h-2 w-full rounded bg-surface-container-high/80" />
-                <div className="h-2 w-5/6 rounded bg-surface-container-high/60" />
-                <div className="mt-auto h-24 rounded-lg border border-dashed border-outline-variant bg-surface-container-low" />
-              </div>
-            </div>
+            <AiOverview
+              summary={doc?.summary}
+              keyTopics={doc?.keyTopics}
+              suggestedQuestions={doc?.suggestedQuestions}
+              onAsk={(q) => void onSend(q)}
+            />
             {doc?.status === "ready" && (doc.chunkCount ?? 0) === 0 && (
               <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-body-sm text-amber-900">
                 This document has no indexed chunks. Re-upload after setting
                 GEMINI_API_KEY.
+              </p>
+            )}
+            {!doc?.summary && doc?.status === "ready" && (
+              <p className="text-body-sm text-on-surface-variant">
+                AI Overview appears for newly uploaded documents. Re-upload to
+                generate summary, topics, and suggested questions.
               </p>
             )}
           </div>

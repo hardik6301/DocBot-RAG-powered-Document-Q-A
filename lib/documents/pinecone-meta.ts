@@ -29,6 +29,13 @@ function toDoc(id: string, metadata: Record<string, unknown>): AppDocument {
         : Number(metadata.chunkCount),
     pineconeNs: String(metadata.pineconeNs || metadata.userId || ""),
     status: (String(metadata.status || "processing") as DocStatus) || "processing",
+    summary: metadata.summary ? String(metadata.summary) : null,
+    keyTopics: Array.isArray(metadata.keyTopics)
+      ? metadata.keyTopics.map((x) => String(x))
+      : null,
+    suggestedQuestions: Array.isArray(metadata.suggestedQuestions)
+      ? metadata.suggestedQuestions.map((x) => String(x))
+      : null,
     createdAt: String(metadata.createdAt || new Date().toISOString()),
     updatedAt: String(metadata.updatedAt || new Date().toISOString()),
   };

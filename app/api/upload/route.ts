@@ -76,6 +76,9 @@ export async function POST(request: Request) {
       chunkCount: null,
       pineconeNs: vectorNs,
       status: "processing",
+      summary: null,
+      keyTopics: null,
+      suggestedQuestions: null,
     });
     docId = doc.id;
 
@@ -91,6 +94,9 @@ export async function POST(request: Request) {
       status: "ready" as const,
       pageCount: result.pageCount,
       chunkCount: result.chunkCount,
+      summary: result.intelligence?.summary ?? null,
+      keyTopics: result.intelligence?.keyTopics ?? null,
+      suggestedQuestions: result.intelligence?.suggestedQuestions ?? null,
     };
 
     let ready = await updateDocument(doc.id, user.id, patch);
@@ -108,6 +114,13 @@ export async function POST(request: Request) {
           status: row.status as "ready",
           pageCount: row.pageCount,
           chunkCount: row.chunkCount,
+          summary: row.summary ?? null,
+          keyTopics: Array.isArray(row.keyTopics)
+            ? (row.keyTopics as string[])
+            : null,
+          suggestedQuestions: Array.isArray(row.suggestedQuestions)
+            ? (row.suggestedQuestions as string[])
+            : null,
           updatedAt: row.updatedAt.toISOString(),
         };
       } catch (e) {

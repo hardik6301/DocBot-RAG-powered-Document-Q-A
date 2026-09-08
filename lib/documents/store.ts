@@ -197,6 +197,9 @@ export async function createDocument(
   const now = new Date().toISOString();
   const doc: AppDocument = {
     ...input,
+    summary: input.summary ?? null,
+    keyTopics: input.keyTopics ?? null,
+    suggestedQuestions: input.suggestedQuestions ?? null,
     id: randomUUID(),
     createdAt: now,
     updatedAt: now,
@@ -228,6 +231,9 @@ export async function updateDocument(
       | "filename"
       | "fileUrl"
       | "fileSize"
+      | "summary"
+      | "keyTopics"
+      | "suggestedQuestions"
     >
   >,
 ): Promise<AppDocument | null> {

@@ -75,6 +75,14 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 DO $$ BEGIN
-  ALTER TABLE "Message" ADD CONSTRAINT "Message_chatId_fkey"
-    FOREIGN KEY ("chatId") REFERENCES "Chat"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+  ALTER TABLE "Document" ADD COLUMN "summary" TEXT;
+EXCEPTION WHEN duplicate_column THEN NULL; END $$;
+
+DO $$ BEGIN
+  ALTER TABLE "Document" ADD COLUMN "keyTopics" JSONB;
+EXCEPTION WHEN duplicate_column THEN NULL; END $$;
+
+DO $$ BEGIN
+  ALTER TABLE "Document" ADD COLUMN "suggestedQuestions" JSONB;
+EXCEPTION WHEN duplicate_column THEN NULL; END $$;
+

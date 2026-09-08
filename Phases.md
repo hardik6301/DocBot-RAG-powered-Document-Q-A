@@ -142,16 +142,18 @@ Example: capital of France + Software Engineer JD → honest “not in the uploa
 
 **Goal:** Analysis generated at ingest (when status → `ready`), not on first chat open.
 
-- [ ] After ready: AI summary  
-- [ ] Key topics  
-- [ ] Suggested questions  
-- [ ] Persist on Document (schema + store)  
-- [ ] UI: AI Overview panel (summary, topics, suggested Qs → fill chat)  
+- [x] After ready: AI summary  
+- [x] Key topics  
+- [x] Suggested questions  
+- [x] Persist on Document (schema + store)  
+- [x] UI: AI Overview panel (summary, topics, suggested Qs → fill chat)  
 
 **Exit criteria**
 
-- New ready docs show summary/topics/suggestions without opening a separate analysis action  
-- Suggested question click starts chat with that prompt  
+- [x] New ready docs show summary/topics/suggestions without a separate analysis action  
+- [x] Suggested question click starts chat with that prompt  
+
+**Note:** Existing docs need re-upload to populate intelligence fields.  
 
 ---
 

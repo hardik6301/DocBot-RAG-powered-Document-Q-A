@@ -1,5 +1,12 @@
 import type { AppDocument } from "@/types";
 import prisma from "@/lib/prisma";
+import type { Prisma } from "@prisma/client";
+
+function asStringArray(v: unknown): string[] | null {
+  if (v == null) return null;
+  if (!Array.isArray(v)) return null;
+  return v.map((x) => String(x)).filter(Boolean);
+}
 
 function toApp(doc: {
   id: string;
@@ -12,6 +19,9 @@ function toApp(doc: {
   chunkCount: number | null;
   pineconeNs: string;
   status: string;
+  summary?: string | null;
+  keyTopics?: unknown;
+  suggestedQuestions?: unknown;
   createdAt: Date;
   updatedAt: Date;
 }): AppDocument {
@@ -26,6 +36,9 @@ function toApp(doc: {
     chunkCount: doc.chunkCount,
     pineconeNs: doc.pineconeNs,
     status: doc.status as AppDocument["status"],
+    summary: doc.summary ?? null,
+    keyTopics: asStringArray(doc.keyTopics),
+    suggestedQuestions: asStringArray(doc.suggestedQuestions),
     createdAt: doc.createdAt.toISOString(),
     updatedAt: doc.updatedAt.toISOString(),
   };
@@ -33,7 +46,6 @@ function toApp(doc: {
 
 /** Map Prisma User.id or Supabase auth id → stable Prisma User.id */
 export async function resolveOwnerId(userId: string): Promise<string | null> {
-  // Prefer PK lookup (fast) before supabaseId unique lookup.
   const byId = await prisma.user.findUnique({ where: { id: userId } });
   if (byId) return byId.id;
   const bySupabase = await prisma.user.findUnique({
@@ -66,7 +78,6 @@ export async function dbListDocuments(userId: string): Promise<AppDocument[]> {
     where,
     orderBy: { createdAt: "desc" },
   });
-  // Dedupe by id (should already be unique).
   const seen = new Set<string>();
   return rows
     .map(toApp)
@@ -103,31 +114,42 @@ export async function dbCreateDocument(
       chunkCount: input.chunkCount,
       pineconeNs: input.pineconeNs,
       status: input.status,
+      summary: input.summary,
+      keyTopics: input.keyTopics ?? undefined,
+      suggestedQuestions: input.suggestedQuestions ?? undefined,
     },
   });
   return toApp(row);
 }
 
+const UPDATE_KEYS = [
+  "status",
+  "pageCount",
+  "chunkCount",
+  "filename",
+  "fileUrl",
+  "fileSize",
+  "summary",
+  "keyTopics",
+  "suggestedQuestions",
+] as const;
+
 export async function dbUpdateDocument(
   id: string,
   userId: string,
-  patch: Partial<
-    Pick<
-      AppDocument,
-      | "status"
-      | "pageCount"
-      | "chunkCount"
-      | "filename"
-      | "fileUrl"
-      | "fileSize"
-    >
-  >,
+  patch: Partial<Pick<AppDocument, (typeof UPDATE_KEYS)[number]>>,
 ): Promise<AppDocument | null> {
   const existing = await dbGetDocument(id, userId);
   if (!existing) return null;
+  const data: Prisma.DocumentUpdateInput = {};
+  for (const key of UPDATE_KEYS) {
+    if (patch[key] !== undefined) {
+      (data as Record<string, unknown>)[key] = patch[key];
+    }
+  }
   const row = await prisma.document.update({
     where: { id },
-    data: patch,
+    data,
   });
   return toApp(row);
 }
@@ -147,10 +169,6 @@ export async function dbCountDocuments(userId: string): Promise<number> {
   return prisma.document.count({ where });
 }
 
-/**
- * Upsert a Pinecone-only / legacy document into Postgres so Chat FKs work.
- * Preserves the existing document id (UUID or cuid).
- */
 export async function ensureDocumentPersisted(
   doc: AppDocument,
   userId: string,
@@ -178,6 +196,9 @@ export async function ensureDocumentPersisted(
         chunkCount: doc.chunkCount,
         pineconeNs: doc.pineconeNs || ownerId,
         status: doc.status,
+        summary: doc.summary,
+        keyTopics: doc.keyTopics ?? undefined,
+        suggestedQuestions: doc.suggestedQuestions ?? undefined,
         createdAt: new Date(doc.createdAt),
         updatedAt: new Date(doc.updatedAt),
       },

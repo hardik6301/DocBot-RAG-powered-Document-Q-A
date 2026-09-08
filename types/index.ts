@@ -20,6 +20,10 @@ export type AppDocument = {
   chunkCount: number | null;
   pineconeNs: string;
   status: DocStatus;
+  /** Phase 9 — AI overview (generated at ingest). */
+  summary: string | null;
+  keyTopics: string[] | null;
+  suggestedQuestions: string[] | null;
   createdAt: string;
   updatedAt: string;
 };
