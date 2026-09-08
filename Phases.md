@@ -101,16 +101,16 @@ Query → embed → Pinecone top-15
   → grounded generation
 ```
 
-- [ ] Increase Pinecone candidate pool (e.g. 15)  
-- [ ] Gemini scores/reranks candidates  
-- [ ] Pass top-5 into existing grounded generation  
-- [ ] Re-run the same 15–20 baseline questions  
-- [ ] Record before/after PASS rate  
+- [x] Increase Pinecone candidate pool (15) — `RETRIEVE_TOP_K`  
+- [x] Gemini scores/reranks candidates — `lib/rerank.ts`  
+- [x] Pass top-5 into existing grounded generation  
+- [ ] Re-run the same 15–20 baseline questions (`node evals/run-baseline.mjs`)  
+- [ ] Record before/after PASS rate vs 8.1 (81.8%)  
 
 **Exit criteria**
 
-- Chat path uses retrieve → rerank → generate  
-- Baseline comparison table updated (v1 vs v2)
+- [x] Chat path uses retrieve → rerank → generate (`/api/chat`, `/api/chat/multi`)  
+- [ ] Baseline comparison table updated (v1 vs v3) when re-run completes
 
 ### 8.4 — Grounding + guardrails
 

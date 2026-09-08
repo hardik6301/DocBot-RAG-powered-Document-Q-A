@@ -43,8 +43,16 @@ const EMBED_DIM = 768;
 const CHUNK_SIZE = 2000;
 const CHUNK_OVERLAP = 200;
 const CONTEXTUAL = process.env.CONTEXTUAL === "1";
-const NS = CONTEXTUAL ? "eval-baseline-v2-contextual" : "eval-baseline-v1";
-const TOP_K = 5;
+const RERANK = process.env.RERANK !== "0"; // default ON to match app Phase 8.3
+const NS = CONTEXTUAL
+  ? RERANK
+    ? "eval-baseline-v3-contextual-rerank"
+    : "eval-baseline-v2-contextual"
+  : RERANK
+    ? "eval-baseline-v3-rerank"
+    : "eval-baseline-v1";
+const RETRIEVE_K = RERANK ? 15 : 5;
+const TOP_K = RERANK ? 5 : 5;
 const SCORE_MIN = 0.15;
 
 const DOCS = [
@@ -385,11 +393,71 @@ async function upsertChunks(index, records) {
   }
 }
 
+
+async function rerankChunks(question, candidates, keep = 5) {
+  if (candidates.length <= keep) return candidates;
+  const blocks = candidates
+    .map((c, i) => {
+      const head = `[${i + 1}] (${c.filename}${c.page != null ? `, page ${c.page}` : ""})`;
+      const body = c.chunkText.replace(/\s+/g, " ").trim().slice(0, 1200);
+      return `${head}\n${body}`;
+    })
+    .join("\n\n");
+  const prompt = `You rank document chunks for retrieval relevance.
+
+QUESTION:
+${question}
+
+CHUNKS:
+${blocks}
+
+Return ONLY a JSON array of chunk numbers (1-based), ordered from most relevant to least relevant.
+Include every chunk number exactly once. Example: [3,1,2,5,4]
+No markdown, no explanation.`;
+  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY.trim());
+  const models = ["gemini-flash-latest", "gemini-2.0-flash", "gemini-flash-lite-latest"];
+  let raw = "";
+  for (const modelName of models) {
+    try {
+      const model = genAI.getGenerativeModel({ model: modelName });
+      const result = await model.generateContent(prompt);
+      raw = result.response.text().trim();
+      break;
+    } catch {
+      continue;
+    }
+  }
+  if (!raw) return candidates.slice(0, keep);
+  const jsonMatch = raw.match(/\[[\s\S]*?\]/);
+  if (!jsonMatch) return candidates.slice(0, keep);
+  let ranked;
+  try {
+    ranked = JSON.parse(jsonMatch[0]);
+  } catch {
+    return candidates.slice(0, keep);
+  }
+  if (!Array.isArray(ranked)) return candidates.slice(0, keep);
+  const picked = [];
+  const used = new Set();
+  for (const id of ranked.map(Number)) {
+    if (picked.length >= keep) break;
+    const idx = id - 1;
+    if (!Number.isInteger(id) || idx < 0 || idx >= candidates.length || used.has(idx)) continue;
+    used.add(idx);
+    picked.push(candidates[idx]);
+  }
+  for (let i = 0; i < candidates.length && picked.length < keep; i++) {
+    if (used.has(i)) continue;
+    picked.push(candidates[i]);
+  }
+  return picked;
+}
+
 async function querySimilar(index, vector, docId) {
   const result = await index.query({
     namespace: NS,
     vector,
-    topK: TOP_K,
+    topK: RETRIEVE_K,
     includeMetadata: true,
     filter: { docId: { $eq: docId } },
   });
@@ -547,7 +615,7 @@ function escCell(s) {
 }
 
 async function main() {
-  console.log("Namespace:", NS);
+  console.log("Namespace:", NS, "contextual=", CONTEXTUAL, "rerank=", RERANK);
   const index = await getIndex();
 
   try {
@@ -600,16 +668,20 @@ async function main() {
     const vector = await embedOne(q.q, "RETRIEVAL_QUERY");
     const matches = await querySimilar(index, vector, doc.id);
     const usable = matches.filter((m) => m.chunkText && m.score > SCORE_MIN);
+    const ranked = RERANK
+      ? await rerankChunks(q.q, usable, TOP_K)
+      : usable.slice(0, TOP_K);
     let answer;
     let sources = [];
-    if (usable.length === 0) {
+    if (ranked.length === 0) {
       answer =
         "I could not find relevant information in this document for that question.";
     } else {
-      sources = usable.map((m) => ({
+      sources = ranked.map((m) => ({
         chunkText: m.chunkText,
         page: m.page,
         filename: m.filename || doc.filename,
+        score: m.score,
       }));
       answer = await generateGroundedAnswer(
         q.q,
@@ -620,12 +692,9 @@ async function main() {
         })),
       );
     }
-    const actualSrc = sources
+    const withScores = ranked
       .slice(0, 3)
-      .map((s) => `p${s.page ?? "?"} (${(s.score ?? 0).toFixed?.(2) ?? ""})`)
-      .join("; ");
-    // re-query scores onto sources for display
-    const withScores = usable.slice(0, 3).map((m) => `p${m.page} @${m.score.toFixed(2)}`);
+      .map((m) => `p${m.page} @${(m.score ?? 0).toFixed(2)}`);
     const result = scoreAnswer(q, answer, sources);
     console.log(result);
     rows.push({
@@ -707,11 +776,17 @@ ${table(byDoc.C)}
 `;
 
   mkdirSync(join(__dirname, "results"), { recursive: true });
-  const outName = CONTEXTUAL ? "baseline-v2-contextual-filled.md" : "baseline-v1-filled.md";
+  const outName = CONTEXTUAL
+    ? RERANK
+      ? "baseline-v3-contextual-rerank-filled.md"
+      : "baseline-v2-contextual-filled.md"
+    : RERANK
+      ? "baseline-v3-rerank-filled.md"
+      : "baseline-v1-filled.md";
   const outPath = join(__dirname, "results", outName);
   writeFileSync(outPath, md);
   writeFileSync(
-    join(__dirname, "results", CONTEXTUAL ? "baseline-v2-contextual-raw.json" : "baseline-v1-raw.json"),
+    join(__dirname, "results", outName.replace("-filled.md", "-raw.json")),
     JSON.stringify({ pass, partial, fail, rows }, null, 2),
   );
   console.log("\nWrote", outPath);

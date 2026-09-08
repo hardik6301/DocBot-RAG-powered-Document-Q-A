@@ -12,6 +12,11 @@ import {
   isGeminiConfigured,
 } from "@/lib/gemini";
 import { isPineconeConfigured, querySimilar } from "@/lib/pinecone";
+import {
+  RERANK_KEEP,
+  RETRIEVE_TOP_K,
+  rerankChunks,
+} from "@/lib/rerank";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -103,8 +108,14 @@ export async function POST(request: Request) {
     const question = body.question.trim();
     const vector = await embedQuery(question);
     const namespace = user.supabaseId || user.id;
-    const matches = await querySimilar(namespace, vector, 8, scopeIds);
+    const matches = await querySimilar(
+      namespace,
+      vector,
+      RETRIEVE_TOP_K,
+      scopeIds,
+    );
     const usable = matches.filter((m) => m.chunkText && m.score > 0.15);
+    const ranked = await rerankChunks(question, usable, RERANK_KEEP);
 
     let answer: string;
     let sources: {
@@ -113,11 +124,11 @@ export async function POST(request: Request) {
       filename: string;
     }[] = [];
 
-    if (usable.length === 0) {
+    if (ranked.length === 0) {
       answer =
         "I could not find relevant information across your selected documents.";
     } else {
-      sources = usable.map((m) => ({
+      sources = ranked.map((m) => ({
         chunkText: m.chunkText,
         page: m.page,
         filename: m.filename || "document",

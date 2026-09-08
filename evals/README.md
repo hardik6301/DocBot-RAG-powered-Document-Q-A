@@ -27,14 +27,21 @@ Manual UI option: upload `fixtures/` PDFs and fill a copy of `baseline-v1.md` by
 
 ## Later phases
 
-### 8.2 contextual re-test
+### 8.3 rerank re-test
 
 ```bash
+# default: rerank ON (matches app)
+node evals/run-baseline.mjs
+
+# with contextual ingest + rerank
 CONTEXTUAL=1 node evals/run-baseline.mjs
+
+# disable rerank (compare to v1 path)
+RERANK=0 node evals/run-baseline.mjs
 ```
 
-Writes `results/baseline-v2-contextual-filled.md`. Compare PASS rate to v1 (81.8%).
+Writes `baseline-v3-rerank-filled.md` (or contextual-rerank variant). Compare to v1 **81.8%**.
 
 **Production docs:** delete + re-upload (or re-ingest) so vectors use contextual embeddings. Citations still show original chunk text.
 
-After 8.3, copy filled sheets to e.g. `results/baseline-v3-after-rerank.md` and compare on the **same** questions.
+After 8.4, re-run again and lock go/no-go for Phase 9 vs 12.
