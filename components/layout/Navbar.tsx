@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import Icon from "@/components/ui/Icon";
 import { createClient } from "@/lib/supabase/client";
@@ -24,9 +24,98 @@ const appLinks = [
   { href: "/analytics", label: "Analytics" },
 ];
 
-const marketingLinks = [
-  { href: "/#how", label: "How it works" },
-];
+const marketingLinks = [{ href: "/#how", label: "How it works" }];
+
+function AccountMenu({
+  user,
+  onSignOut,
+  tone = "app",
+}: {
+  user: User;
+  onSignOut: () => void;
+  tone?: "app" | "marketing";
+}) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (e: MouseEvent) => {
+      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  const iconClass =
+    tone === "marketing"
+      ? "text-[26px] text-[#9CA3AF] transition-colors group-hover:text-[#6B7280]"
+      : "text-[28px]";
+
+  return (
+    <div className="relative" ref={rootRef}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className={`group rounded-full p-1 transition-colors ${
+          tone === "marketing"
+            ? "text-[#9CA3AF] hover:text-[#6B7280]"
+            : "text-on-surface-variant hover:bg-surface-container-low"
+        }`}
+        aria-label="Account menu"
+        aria-expanded={open}
+        aria-haspopup="menu"
+      >
+        <Icon name="account_circle" className={iconClass} />
+      </button>
+      {open && (
+        <div
+          role="menu"
+          className="absolute right-0 z-50 mt-2 w-64 overflow-hidden rounded-xl border border-outline-variant bg-white py-1 shadow-lg"
+        >
+          <div className="border-b border-outline-variant px-3 py-2.5">
+            <p className="text-[11px] font-medium uppercase tracking-wide text-on-surface-variant">
+              Signed in
+            </p>
+            <p className="mt-0.5 truncate text-body-sm text-on-surface" title={user.email}>
+              {user.email}
+            </p>
+          </div>
+          {tone === "marketing" && (
+            <Link
+              href="/dashboard"
+              role="menuitem"
+              onClick={() => setOpen(false)}
+              className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-body-sm text-on-surface hover:bg-surface-container-low"
+            >
+              <Icon name="dashboard" className="text-[18px]" />
+              Dashboard
+            </Link>
+          )}
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setOpen(false);
+              onSignOut();
+            }}
+            className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-body-sm text-on-surface hover:bg-surface-container-low"
+          >
+            <Icon name="logout" className="text-[18px]" />
+            Sign out
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function Navbar({
   variant = "marketing",
@@ -66,7 +155,6 @@ export default function Navbar({
     return (
       <nav className="fixed inset-x-0 top-0 z-50 h-16 border-b border-[#EDEDED] bg-white">
         <div className="mx-auto flex h-full w-full max-w-6xl items-center justify-between px-6 md:px-10">
-          {/* Left: logo + nav — large gap after logo, tighter between links */}
           <div className="flex min-w-0 items-center">
             <Link
               href="/"
@@ -87,24 +175,9 @@ export default function Navbar({
             </div>
           </div>
 
-          {/* Right: Log In · Sign Up · profile — compact, even spacing */}
           <div className="flex shrink-0 items-center gap-5 md:gap-6">
             {user ? (
-              <>
-                <Link
-                  href="/dashboard"
-                  className="hidden cursor-pointer whitespace-nowrap text-[15px] font-medium leading-none text-[#1D4ED8] transition-colors duration-200 hover:text-[#1E40AF] sm:inline"
-                >
-                  Dashboard
-                </Link>
-                <button
-                  type="button"
-                  onClick={signOut}
-                  className="cursor-pointer whitespace-nowrap text-[15px] font-normal leading-none text-[#6B7280] transition-colors duration-200 hover:text-[#111827]"
-                >
-                  Sign out
-                </button>
-              </>
+              <AccountMenu user={user} onSignOut={signOut} tone="marketing" />
             ) : (
               <>
                 <Link
@@ -119,15 +192,15 @@ export default function Navbar({
                 >
                   Sign Up
                 </Link>
+                <Link
+                  href="/auth/login"
+                  className="inline-flex cursor-pointer items-center justify-center text-[#9CA3AF] transition-colors duration-200 hover:text-[#6B7280]"
+                  aria-label="Account"
+                >
+                  <Icon name="account_circle" className="text-[26px]" />
+                </Link>
               </>
             )}
-            <Link
-              href={user ? "/dashboard" : "/auth/login"}
-              className="inline-flex cursor-pointer items-center justify-center text-[#9CA3AF] transition-colors duration-200 hover:text-[#6B7280]"
-              aria-label="Account"
-            >
-              <Icon name="account_circle" className="text-[26px]" />
-            </Link>
           </div>
         </div>
       </nav>
@@ -187,18 +260,7 @@ export default function Navbar({
             Local mode
           </span>
         ) : user ? (
-          <>
-            <span className="hidden max-w-[140px] truncate text-body-sm text-on-surface-variant sm:inline">
-              {user.email}
-            </span>
-            <button
-              type="button"
-              onClick={signOut}
-              className="cursor-pointer rounded-lg px-3 py-2 text-body-sm font-medium text-on-surface-variant transition-colors hover:bg-surface-container-low hover:text-primary"
-            >
-              Sign out
-            </button>
-          </>
+          <AccountMenu user={user} onSignOut={signOut} tone="app" />
         ) : (
           <Link
             href="/auth/login"
@@ -207,13 +269,6 @@ export default function Navbar({
             Sign in
           </Link>
         )}
-        <button
-          type="button"
-          className="rounded-full p-1 text-on-surface-variant transition-colors hover:bg-surface-container-low"
-          aria-label="Account"
-        >
-          <Icon name="account_circle" className="text-[28px]" />
-        </button>
       </div>
     </nav>
   );
