@@ -126,3 +126,49 @@ export async function materializeForIngest(fileUrl: string): Promise<{
     },
   };
 }
+
+/** Read upload bytes for authenticated download / preview. */
+export async function readUploadBytes(fileUrl: string): Promise<{
+  bytes: Buffer;
+  contentType: string;
+}> {
+  if (isSupabaseFileUrl(fileUrl)) {
+    if (!isStorageConfigured()) {
+      throw new Error("Storage is not configured");
+    }
+    const { bucket, objectPath } = parseSupabaseUrl(fileUrl);
+    const supabase = createServiceClient();
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .download(objectPath);
+    if (error || !data) {
+      throw new Error(
+        `Storage download failed: ${error?.message ?? "no data"}`,
+      );
+    }
+    const bytes = Buffer.from(await data.arrayBuffer());
+    return {
+      bytes,
+      contentType: guessContentType(objectPath),
+    };
+  }
+
+  const absPath = resolveUploadPath(fileUrl);
+  const bytes = await fs.readFile(absPath);
+  return { bytes, contentType: guessContentType(absPath) };
+}
+
+function guessContentType(name: string): string {
+  const lower = name.toLowerCase();
+  if (lower.endsWith(".pdf")) return "application/pdf";
+  if (lower.endsWith(".pptx") || lower.endsWith(".ppt"))
+    return "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+  if (lower.endsWith(".docx") || lower.endsWith(".doc"))
+    return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+  if (lower.endsWith(".epub")) return "application/epub+zip";
+  if (lower.endsWith(".md") || lower.endsWith(".markdown"))
+    return "text/markdown; charset=utf-8";
+  if (lower.endsWith(".txt") || lower.endsWith(".html") || lower.endsWith(".htm"))
+    return "text/plain; charset=utf-8";
+  return "application/octet-stream";
+}

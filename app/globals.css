@@ -63,4 +63,12 @@ body {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
+  /* Citation PDF text-layer highlights (react-pdf customTextRenderer) */
+  .cite-pdf-viewer mark.cite-hit {
+    background: rgba(251, 191, 36, 0.55);
+    color: inherit;
+    border-radius: 2px;
+    padding: 0 1px;
+  }
 }

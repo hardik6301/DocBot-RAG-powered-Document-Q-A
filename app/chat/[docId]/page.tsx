@@ -2,9 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import Navbar from "@/components/layout/Navbar";
+import AppShell from "@/components/layout/AppShell";
 import Icon from "@/components/ui/Icon";
 import SourceCard from "@/components/chat/SourceCard";
+import CitationAnswer from "@/components/chat/CitationAnswer";
+import SourceViewer from "@/components/chat/SourceViewer";
 import ChatInput, { type ChatSendMeta } from "@/components/chat/ChatInput";
 import ExportChatButton from "@/components/chat/ExportChatButton";
 import AiOverview from "@/components/chat/AiOverview";
@@ -37,6 +39,11 @@ export default function ChatPage({ params }: { params: { docId: string } }) {
     null,
   );
   const [shareOpen, setShareOpen] = useState(false);
+  const [activeCite, setActiveCite] = useState<{
+    messageId: string;
+    index: number;
+    source: SourceCitation;
+  } | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const phaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -183,9 +190,8 @@ export default function ChatPage({ params }: { params: { docId: string } }) {
 
   if (loadError && !doc) {
     return (
-      <div className="bg-background">
-        <Navbar variant="app" />
-        <main className="flex min-h-[100dvh] flex-col items-center justify-center px-6 pt-16 text-center">
+      <AppShell>
+        <main className="flex min-h-[70dvh] flex-col items-center justify-center px-6 text-center">
           <Icon name="error" className="mb-3 text-[40px] text-error" />
           <h1 className="text-headline-lg text-on-surface">Chat unavailable</h1>
           <p className="mt-2 max-w-md text-body-md text-on-surface-variant">
@@ -198,15 +204,13 @@ export default function ChatPage({ params }: { params: { docId: string } }) {
             Back to dashboard
           </Link>
         </main>
-      </div>
+      </AppShell>
     );
   }
 
   return (
-    <div className="bg-background text-on-background">
-      <Navbar variant="app" />
-
-      <main className="flex h-[100dvh] overflow-hidden pt-16">
+    <AppShell flush>
+      <main className="flex h-[calc(100dvh-4rem)] overflow-hidden">
         <aside className="hidden w-80 shrink-0 flex-col border-r border-outline-variant bg-surface-container-lowest md:flex">
           <div className="border-b border-outline-variant p-stack-md">
             <div className="mb-stack-sm flex items-start justify-between">
@@ -341,24 +345,61 @@ export default function ChatPage({ params }: { params: { docId: string } }) {
                         />
                       </div>
                       <div className="space-y-4">
-                        <div className="whitespace-pre-wrap rounded-2xl rounded-tl-none border border-outline-variant bg-white px-5 py-4 text-chat-bubble leading-relaxed text-on-surface shadow-sm">
-                          {m.content}
+                        <div className="rounded-2xl rounded-tl-none border border-outline-variant bg-white px-5 py-4 shadow-sm">
+                          <CitationAnswer
+                            content={m.content}
+                            sources={m.sources}
+                            activeIndex={
+                              activeCite?.messageId === m.id
+                                ? activeCite.index
+                                : null
+                            }
+                            onCite={(index, source) =>
+                              setActiveCite({
+                                messageId: m.id,
+                                index,
+                                source,
+                              })
+                            }
+                          />
                         </div>
                         {m.id !== "welcome" && m.content && (
                           <ReadAloudButton text={m.content} />
                         )}
                         {m.sources && m.sources.length > 0 && (
-                          <div className="no-scrollbar -mx-2 flex gap-stack-sm overflow-x-auto px-2 pb-2">
-                            {m.sources.map((s, i) => (
-                              <SourceCard
-                                key={`${m.id}-${i}`}
-                                index={String(i + 1).padStart(2, "0")}
-                                page={
-                                  s.page != null ? `Page ${s.page}` : "Source"
-                                }
-                                excerpt={s.chunkText}
-                              />
-                            ))}
+                          <div>
+                            <p className="mb-2 font-mono text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
+                              Sources
+                            </p>
+                            <div className="no-scrollbar -mx-2 flex gap-stack-sm overflow-x-auto px-2 pb-2">
+                              {m.sources.map((s, i) => {
+                                const idx = i + 1;
+                                return (
+                                  <SourceCard
+                                    key={`${m.id}-${i}`}
+                                    index={String(idx)}
+                                    filename={s.filename}
+                                    page={
+                                      s.page != null
+                                        ? `Page ${s.page}`
+                                        : "Source"
+                                    }
+                                    excerpt={s.chunkText}
+                                    active={
+                                      activeCite?.messageId === m.id &&
+                                      activeCite.index === idx
+                                    }
+                                    onOpen={() =>
+                                      setActiveCite({
+                                        messageId: m.id,
+                                        index: idx,
+                                        source: s,
+                                      })
+                                    }
+                                  />
+                                );
+                              })}
+                            </div>
                           </div>
                         )}
                       </div>
@@ -378,6 +419,26 @@ export default function ChatPage({ params }: { params: { docId: string } }) {
             samples={latencySamples}
           />
         </section>
+
+        {activeCite && doc && (
+          <>
+            <button
+              type="button"
+              className="fixed inset-0 z-40 bg-black/30 md:hidden"
+              aria-label="Close source"
+              onClick={() => setActiveCite(null)}
+            />
+            <div className="fixed inset-y-0 right-0 z-50 top-16 md:static md:inset-auto md:z-auto md:top-auto">
+              <SourceViewer
+                documentId={doc.id}
+                fileType={doc.fileType}
+                citationIndex={activeCite.index}
+                source={activeCite.source}
+                onClose={() => setActiveCite(null)}
+              />
+            </div>
+          </>
+        )}
       </main>
       {doc && (
         <ShareDocumentModal
@@ -387,6 +448,6 @@ export default function ChatPage({ params }: { params: { docId: string } }) {
           onClose={() => setShareOpen(false)}
         />
       )}
-    </div>
+    </AppShell>
   );
 }

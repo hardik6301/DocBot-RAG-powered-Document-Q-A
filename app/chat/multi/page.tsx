@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import Navbar from "@/components/layout/Navbar";
+import AppShell from "@/components/layout/AppShell";
 import Icon from "@/components/ui/Icon";
 import SourceCard from "@/components/chat/SourceCard";
 import ChatInput from "@/components/chat/ChatInput";
@@ -120,9 +120,8 @@ export default function MultiChatPage() {
 
   if (loadError) {
     return (
-      <div className="bg-background">
-        <Navbar variant="app" />
-        <main className="flex min-h-[100dvh] flex-col items-center justify-center px-6 pt-16 text-center">
+      <AppShell>
+        <main className="flex min-h-[70dvh] flex-col items-center justify-center px-6 pt-16 text-center">
           <Icon name="workspace_premium" className="mb-3 text-[40px] text-primary" />
           <h1 className="text-headline-lg text-on-surface">Multi-document Q&A</h1>
           <p className="mt-2 max-w-md text-body-md text-on-surface-variant">
@@ -135,14 +134,13 @@ export default function MultiChatPage() {
             Back to dashboard
           </Link>
         </main>
-      </div>
+      </AppShell>
     );
   }
 
   return (
-    <div className="bg-background text-on-background">
-      <Navbar variant="app" />
-      <main className="flex h-[100dvh] overflow-hidden pt-16">
+    <AppShell flush>
+      <main className="flex h-[calc(100dvh-4rem)] overflow-hidden">
         <aside className="hidden w-80 shrink-0 flex-col border-r border-outline-variant bg-surface-container-lowest md:flex">
           <div className="border-b border-outline-variant p-stack-md">
             <span className="rounded bg-primary-container px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-on-primary-container">
@@ -251,6 +249,6 @@ export default function MultiChatPage() {
           <ChatInput onSend={onSend} disabled={selected.size === 0} />
         </section>
       </main>
-    </div>
+    </AppShell>
   );
 }

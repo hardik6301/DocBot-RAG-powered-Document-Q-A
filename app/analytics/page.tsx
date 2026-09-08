@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import Navbar from "@/components/layout/Navbar";
+import AppShell from "@/components/layout/AppShell";
 import Footer from "@/components/layout/Footer";
 import Icon from "@/components/ui/Icon";
 
@@ -50,9 +50,8 @@ export default function AnalyticsPage() {
   }, []);
 
   return (
-    <div className="min-h-[100dvh] bg-surface">
-      <Navbar variant="app" />
-      <main className="mx-auto max-w-5xl px-4 pb-24 pt-24 md:px-container-padding">
+    <AppShell>
+      <main className="mx-auto max-w-5xl px-4 pb-16 pt-8 md:px-8">
         <header className="mb-stack-lg">
           <h1 className="text-headline-xl text-on-surface">Analytics</h1>
           <p className="mt-1 text-on-surface-variant">
@@ -175,6 +174,6 @@ export default function AnalyticsPage() {
         )}
       </main>
       <Footer />
-    </div>
+    </AppShell>
   );
 }

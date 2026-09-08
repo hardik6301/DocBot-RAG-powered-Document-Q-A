@@ -52,6 +52,7 @@ export async function updateSession(request: NextRequest) {
     path.startsWith("/chat") ||
     path.startsWith("/history") ||
     path.startsWith("/workspaces") ||
+    path.startsWith("/settings") ||
     path.startsWith("/share") ||
     path.startsWith("/analytics") ||
     path.startsWith("/billing");

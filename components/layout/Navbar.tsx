@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import Icon from "@/components/ui/Icon";
@@ -9,20 +9,11 @@ import { createClient } from "@/lib/supabase/client";
 
 type NavbarProps = {
   variant?: "marketing" | "app";
-  /** Controlled search for dashboard (optional). */
   searchQuery?: string;
   onSearchChange?: (value: string) => void;
   searchPlaceholder?: string;
+  onMenuClick?: () => void;
 };
-
-const appLinks = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/history", label: "History" },
-  { href: "/workspaces", label: "Workspaces" },
-  { href: "/chat/multi", label: "Multi-doc" },
-  { href: "/chat/compare", label: "Compare" },
-  { href: "/analytics", label: "Analytics" },
-];
 
 const marketingLinks = [{ href: "/#how", label: "How it works" }];
 
@@ -54,26 +45,30 @@ function AccountMenu({
     };
   }, [open]);
 
-  const iconClass =
-    tone === "marketing"
-      ? "text-[26px] text-[#9CA3AF] transition-colors group-hover:text-[#6B7280]"
-      : "text-[28px]";
+  const initials =
+    (user.email?.slice(0, 2) || "DB").toUpperCase();
 
   return (
     <div className="relative" ref={rootRef}>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className={`group rounded-full p-1 transition-colors ${
+        className={`flex items-center gap-2 rounded-full transition-colors ${
           tone === "marketing"
             ? "text-[#9CA3AF] hover:text-[#6B7280]"
-            : "text-on-surface-variant hover:bg-surface-container-low"
+            : "p-0.5 hover:bg-surface-container-low"
         }`}
         aria-label="Account menu"
         aria-expanded={open}
         aria-haspopup="menu"
       >
-        <Icon name="account_circle" className={iconClass} />
+        {tone === "app" ? (
+          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0F172A] text-[12px] font-semibold text-white">
+            {initials}
+          </span>
+        ) : (
+          <Icon name="account_circle" className="text-[26px]" />
+        )}
       </button>
       {open && (
         <div
@@ -84,7 +79,10 @@ function AccountMenu({
             <p className="text-[11px] font-medium uppercase tracking-wide text-on-surface-variant">
               Signed in
             </p>
-            <p className="mt-0.5 truncate text-body-sm text-on-surface" title={user.email}>
+            <p
+              className="mt-0.5 truncate text-body-sm text-on-surface"
+              title={user.email}
+            >
               {user.email}
             </p>
           </div>
@@ -99,6 +97,15 @@ function AccountMenu({
               Dashboard
             </Link>
           )}
+          <Link
+            href="/settings"
+            role="menuitem"
+            onClick={() => setOpen(false)}
+            className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-body-sm text-on-surface hover:bg-surface-container-low"
+          >
+            <Icon name="settings" className="text-[18px]" />
+            Settings
+          </Link>
           <button
             type="button"
             role="menuitem"
@@ -122,8 +129,8 @@ export default function Navbar({
   searchQuery,
   onSearchChange,
   searchPlaceholder = "Search documents...",
+  onMenuClick,
 }: NavbarProps) {
-  const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const configured =
@@ -207,54 +214,46 @@ export default function Navbar({
     );
   }
 
+  // App: brand · search · account — no primary nav links
   return (
-    <nav className="fixed top-0 z-50 flex h-16 w-full items-center justify-between border-b border-outline-variant bg-surface px-4 md:px-container-padding">
-      <div className="flex items-center gap-8">
-        <Link
-          href="/dashboard"
-          className="cursor-pointer text-headline-lg font-bold text-primary transition-opacity duration-200 hover:opacity-90"
-        >
-          DocBot
-        </Link>
-        <div className="hidden items-center gap-6 md:flex">
-          {appLinks.map((link) => {
-            const active =
-              pathname === link.href ||
-              (link.href === "/dashboard" &&
-                (pathname.startsWith("/chat") ||
-                  pathname.startsWith("/analytics")));
-            return (
-              <Link
-                key={link.label}
-                href={link.href}
-                className={`cursor-pointer rounded px-2 py-1 text-body-md transition-colors duration-200 ${
-                  active
-                    ? "border-b-2 border-primary pb-1 text-primary"
-                    : "text-on-surface-variant hover:bg-surface-container-low hover:text-[#0F172A]"
-                }`}
-              >
-                {link.label}
-              </Link>
-            );
-          })}
-        </div>
-      </div>
+    <nav className="sticky top-0 z-30 flex h-16 w-full items-center gap-3 border-b border-outline-variant bg-white/90 px-4 backdrop-blur-md md:px-6">
+      <button
+        type="button"
+        className="rounded-lg p-2 text-on-surface-variant hover:bg-surface-container-low lg:hidden"
+        aria-label="Open menu"
+        onClick={onMenuClick}
+      >
+        <Icon name="menu" className="text-[22px]" />
+      </button>
 
-      <div className="flex items-center gap-3 md:gap-4">
-        <div className="relative hidden sm:block">
+      <Link
+        href="/dashboard"
+        className="shrink-0 text-[17px] font-bold tracking-tight text-on-surface"
+      >
+        DocBot
+      </Link>
+
+      <div className="mx-auto hidden min-w-0 max-w-xl flex-1 sm:block">
+        <div className="relative">
           <Icon
             name="search"
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-[20px] text-outline"
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-outline"
           />
           <input
+            id="app-top-search"
             type="search"
             value={searchQuery ?? ""}
             onChange={(e) => onSearchChange?.(e.target.value)}
             placeholder={searchPlaceholder}
-            className="w-56 rounded-lg border border-outline-variant bg-surface-container-low py-2 pl-10 pr-4 text-body-sm outline-none transition-all focus:border-transparent focus:ring-2 focus:ring-primary md:w-64"
+            className="w-full rounded-xl border border-outline-variant bg-surface-container-low py-2 pl-10 pr-14 text-body-sm outline-none transition-all focus:border-transparent focus:ring-2 focus:ring-primary"
           />
+          <kbd className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded border border-outline-variant bg-white px-1.5 py-0.5 text-[10px] font-medium text-outline">
+            ⌘K
+          </kbd>
         </div>
+      </div>
 
+      <div className="ml-auto flex items-center gap-2">
         {!configured ? (
           <span className="hidden rounded-full bg-surface-container-low px-3 py-1.5 font-mono text-label-caps text-on-surface-variant sm:inline">
             Local mode

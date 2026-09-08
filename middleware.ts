@@ -11,6 +11,7 @@ export const config = {
     "/chat/:path*",
     "/history/:path*",
     "/workspaces/:path*",
+    "/settings/:path*",
     "/share/:path*",
     "/analytics/:path*",
     "/billing/:path*",

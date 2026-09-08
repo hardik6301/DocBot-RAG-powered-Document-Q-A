@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import Navbar from "@/components/layout/Navbar";
+import AppShell from "@/components/layout/AppShell";
 import Footer from "@/components/layout/Footer";
 import Icon from "@/components/ui/Icon";
 import type { AppDocument, WorkspaceRow } from "@/types";
@@ -118,9 +118,8 @@ export default function WorkspacesPage() {
   };
 
   return (
-    <div className="min-h-[100dvh] bg-surface">
-      <Navbar variant="app" />
-      <main className="mx-auto max-w-3xl px-4 pb-24 pt-28">
+    <AppShell>
+      <main className="mx-auto max-w-3xl px-4 pb-16 pt-8 md:px-8">
         <header className="mb-8">
           <h1 className="text-headline-xl text-on-surface">Workspaces</h1>
           <p className="mt-1 text-on-surface-variant">
@@ -255,6 +254,6 @@ export default function WorkspacesPage() {
         </Link>
       </main>
       <Footer />
-    </div>
+    </AppShell>
   );
 }

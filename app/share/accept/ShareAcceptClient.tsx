@@ -3,10 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import Navbar from "@/components/layout/Navbar";
+import { Suspense } from "react";
+import AppShell from "@/components/layout/AppShell";
 import Icon from "@/components/ui/Icon";
 
-export default function ShareAcceptClient() {
+function ShareAcceptInner() {
   const params = useSearchParams();
   const router = useRouter();
   const token = params.get("token") || "";
@@ -47,9 +48,8 @@ export default function ShareAcceptClient() {
   }, [token]);
 
   return (
-    <div className="min-h-[100dvh] bg-surface">
-      <Navbar variant="app" />
-      <main className="mx-auto max-w-lg px-4 pb-24 pt-28">
+    <AppShell>
+      <main className="mx-auto max-w-lg px-4 pb-24 pt-10">
         <div className="rounded-2xl border border-outline-variant bg-white p-8 text-center shadow-sm">
           <Icon
             name={status === "ok" ? "check_circle" : "share"}
@@ -78,6 +78,20 @@ export default function ShareAcceptClient() {
           </div>
         </div>
       </main>
-    </div>
+    </AppShell>
+  );
+}
+
+export default function ShareAcceptClient() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-[100dvh] items-center justify-center text-on-surface-variant">
+          Loading invite…
+        </div>
+      }
+    >
+      <ShareAcceptInner />
+    </Suspense>
   );
 }

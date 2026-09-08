@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import Navbar from "@/components/layout/Navbar";
+import AppShell from "@/components/layout/AppShell";
 import Icon from "@/components/ui/Icon";
 
 function ConfirmBody() {
@@ -70,9 +70,8 @@ function ConfirmBody() {
 
 export default function BillingSuccessPage() {
   return (
-    <div className="min-h-[100dvh] bg-surface">
-      <Navbar variant="app" />
-      <main className="mx-auto flex max-w-lg flex-col items-center px-6 pb-24 pt-32 text-center">
+    <AppShell>
+      <main className="mx-auto flex max-w-lg flex-col items-center px-6 pb-24 pt-16 text-center">
         <Suspense
           fallback={
             <p className="text-body-md text-on-surface-variant">Loading…</p>
@@ -87,6 +86,6 @@ export default function BillingSuccessPage() {
           Go to dashboard
         </Link>
       </main>
-    </div>
+    </AppShell>
   );
 }

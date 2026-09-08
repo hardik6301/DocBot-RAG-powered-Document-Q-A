@@ -28,6 +28,17 @@ Document → ingest → chunks → embed → Pinecone
 2. ~~Phase 14.1–14.3 + 14.5–14.6~~ **DONE (code)**  
 3. **Phase 14.4** monetization deferred (`BILLING_ENABLED=false`) — only remaining roadmap item  
 
+### 2026-09-08 — Citation trust UX
+- Inline `[n]` in answers are clickable → source panel
+- Source cards open same viewer; PDFs jump to cited page + text-layer highlight
+- Auth file stream: `GET /api/documents/[id]/file`
+- Landing pricing + deploy banner removed; account menu in avatar dropdown
+
+### 2026-09-09 — App shell navigation
+- Left sidebar: workspace switcher, New Chat, Search, Work/Ask/Organize/Insights + Settings
+- Slim top bar: DocBot · search (⌘K) · profile menu (no primary nav links)
+- `AppShell` + `WorkspaceContext`; `/settings` page; no billing UI in shell
+
 ### 2026-09-08 — Phase 14.6 complete (code)
 - Schema: `Workspace`, `WorkspaceMember`, `DocumentShare`, `Document.workspaceId`
 - Access: `lib/access.ts` + `lib/sharing.ts`; chat/PATCH/DELETE gated by role
