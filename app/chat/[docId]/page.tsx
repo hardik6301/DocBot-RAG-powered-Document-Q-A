@@ -5,9 +5,12 @@ import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Icon from "@/components/ui/Icon";
 import SourceCard from "@/components/chat/SourceCard";
-import ChatInput from "@/components/chat/ChatInput";
+import ChatInput, { type ChatSendMeta } from "@/components/chat/ChatInput";
 import ExportChatButton from "@/components/chat/ExportChatButton";
 import AiOverview from "@/components/chat/AiOverview";
+import ReadAloudButton from "@/components/chat/ReadAloudButton";
+import type { PipelinePhase } from "@/components/chat/VoiceStatusBar";
+import type { RagTimings, VoiceLatencySample } from "@/lib/latency";
 import type { AppDocument, SourceCitation, StoredMessage } from "@/types";
 
 type UiMessage = StoredMessage & { typing?: boolean };
@@ -25,7 +28,15 @@ export default function ChatPage({ params }: { params: { docId: string } }) {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [messages, setMessages] = useState<UiMessage[]>([WELCOME]);
+  const [pipelinePhase, setPipelinePhase] = useState<PipelinePhase>(null);
+  const [latencySamples, setLatencySamples] = useState<VoiceLatencySample[]>(
+    [],
+  );
+  const [lastSample, setLastSample] = useState<VoiceLatencySample | null>(
+    null,
+  );
   const bottomRef = useRef<HTMLDivElement>(null);
+  const phaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     void (async () => {
@@ -73,8 +84,16 @@ export default function ChatPage({ params }: { params: { docId: string } }) {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const onSend = async (text: string) => {
+  const onSend = async (text: string, meta?: ChatSendMeta) => {
     const typingId = `typing-${Date.now()}`;
+    const clientStart = performance.now();
+    setPipelinePhase("searching");
+    if (phaseTimerRef.current) clearTimeout(phaseTimerRef.current);
+    phaseTimerRef.current = setTimeout(
+      () => setPipelinePhase("generating"),
+      1200,
+    );
+
     setMessages((prev) => [
       ...prev.filter((m) => m.id !== "welcome"),
       {
@@ -104,6 +123,7 @@ export default function ChatPage({ params }: { params: { docId: string } }) {
         error?: string;
         answer?: string;
         sources?: SourceCitation[];
+        timings?: RagTimings;
       } = {};
       if (raw) {
         try {
@@ -115,6 +135,18 @@ export default function ChatPage({ params }: { params: { docId: string } }) {
         throw new Error(`Chat failed (${res.status})`);
       }
       if (!res.ok) throw new Error(data.error || `Chat failed (${res.status})`);
+
+      const clientTotalMs = Math.round(performance.now() - clientStart);
+      if (data.timings) {
+        const sample: VoiceLatencySample = {
+          ...data.timings,
+          sttMs: meta?.source === "voice" ? (meta.sttMs ?? null) : null,
+          clientTotalMs,
+          at: new Date().toISOString(),
+        };
+        setLastSample(sample);
+        setLatencySamples((prev) => [...prev.slice(-19), sample]);
+      }
 
       setMessages((prev) =>
         prev
@@ -139,6 +171,9 @@ export default function ChatPage({ params }: { params: { docId: string } }) {
             createdAt: new Date().toISOString(),
           }),
       );
+    } finally {
+      if (phaseTimerRef.current) clearTimeout(phaseTimerRef.current);
+      setPipelinePhase(null);
     }
   };
 
@@ -264,10 +299,17 @@ export default function ChatPage({ params }: { params: { docId: string } }) {
                           filled
                         />
                       </div>
-                      <div className="flex items-center gap-1.5 rounded-2xl rounded-tl-none border border-outline-variant bg-white px-5 py-3 shadow-sm">
-                        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-outline" />
-                        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-outline [animation-delay:0.2s]" />
-                        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-outline [animation-delay:0.4s]" />
+                      <div className="flex items-center gap-3 rounded-2xl rounded-tl-none border border-outline-variant bg-white px-5 py-3 shadow-sm">
+                        <div className="flex items-center gap-1.5">
+                          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-outline" />
+                          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-outline [animation-delay:0.2s]" />
+                          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-outline [animation-delay:0.4s]" />
+                        </div>
+                        <span className="text-body-sm text-on-surface-variant">
+                          {pipelinePhase === "generating"
+                            ? "Generating answer…"
+                            : "Searching document…"}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -285,6 +327,9 @@ export default function ChatPage({ params }: { params: { docId: string } }) {
                         <div className="whitespace-pre-wrap rounded-2xl rounded-tl-none border border-outline-variant bg-white px-5 py-4 text-chat-bubble leading-relaxed text-on-surface shadow-sm">
                           {m.content}
                         </div>
+                        {m.id !== "welcome" && m.content && (
+                          <ReadAloudButton text={m.content} />
+                        )}
                         {m.sources && m.sources.length > 0 && (
                           <div className="no-scrollbar -mx-2 flex gap-stack-sm overflow-x-auto px-2 pb-2">
                             {m.sources.map((s, i) => (
@@ -308,7 +353,13 @@ export default function ChatPage({ params }: { params: { docId: string } }) {
             <div ref={bottomRef} />
           </div>
 
-          <ChatInput onSend={onSend} />
+          <ChatInput
+            onSend={onSend}
+            disabled={loading || !!loadError || doc?.status !== "ready"}
+            pipelinePhase={pipelinePhase}
+            lastSample={lastSample}
+            samples={latencySamples}
+          />
         </section>
       </main>
     </div>

@@ -4,7 +4,7 @@
 
 ### Docs
 - `Phases.md` updated: Phases 0–7 marked complete; Phases 8–14 locked with exit criteria
-- Immediate next work: **Phase 11 Voice Mode**
+- Immediate next work: **Phase 13 Productivity** (Phase 12 only if RAG quality regresses)
 - Rule: upgrade the single RAG pipeline; no parallel RAG stacks
 
 ### Current production reality
@@ -24,8 +24,14 @@ Document → ingest → chunks → embed → Pinecone
 ```
 
 ### Next slice
-1. ~~Phase 8–10~~ **DONE (code)**  
-2. **Phase 11** Voice Mode (next)  
+1. ~~Phase 8–11~~ **DONE (code)**  
+2. **Phase 13** Productivity (next) — skip **Phase 12** unless eval shows retrieval still weak  
+
+### 2026-09-08 — Phase 11 complete (code)
+- Mic on `ChatInput` → Web Speech STT → same `/api/chat` RAG path
+- UX: Listening → Transcribing → Searching document → Generating answer
+- Read aloud (browser TTS) on assistant answers
+- Server stage timings (`embed` / `pinecone` / `rerank` / `generate`) + client STT/total; P50/P70/P95 in status strip
 
 ### 2026-09-08 — Phase 10 complete (code)
 - `/api/chat/compare` — per-doc retrieve + rerank → structured comparison JSON
@@ -39,7 +45,7 @@ Document → ingest → chunks → embed → Pinecone
 - Re-upload older docs to generate overview
 
 ### Go / no-go after Phase 8
-- **Provisional YES → Phase 9** (shipped) → **Phase 10 next**
+- **Provisional YES → Phase 9** (shipped) → 10 → 11 shipped; **13 next** (12 only if needed)
 
 ### 2026-09-08 — Phase 8.4 complete (code)
 - `lib/grounding.ts`: score floor + lexical mismatch gate + strict prompt rules

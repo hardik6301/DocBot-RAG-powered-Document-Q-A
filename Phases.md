@@ -179,30 +179,30 @@ Example: capital of France + Software Engineer JD → honest “not in the uploa
 
 ### 11.1 Voice input
 
-- [ ] Mic control on chat input  
-- [ ] Speech → text  
-- [ ] Feed transcript into existing chat/RAG pipeline  
+- [x] Mic control on chat input  
+- [x] Speech → text  
+- [x] Feed transcript into existing chat/RAG pipeline  
 
 ### 11.2 Voice UX states
 
-- [ ] Listening → Transcribing → Searching document → Generating answer  
+- [x] Listening → Transcribing → Searching document → Generating answer  
 
 ### 11.3 Optional voice output
 
-- [ ] Text-to-speech “read aloud” for answers  
+- [x] Text-to-speech “read aloud” for answers  
 
 ### 11.4 Latency analytics
 
 Track (ms): STT, embedding, Pinecone, reranking, generation, total; aggregate P50/P70/P95/max.
 
-- [ ] Instrument timings server and/or client  
-- [ ] Simple display or log for N queries  
+- [x] Instrument timings server and/or client  
+- [x] Simple display or log for N queries  
 
 **Exit criteria**
 
-- Mic question completes the same RAG path as typed chat  
-- UX states visible; latency numbers recorded for a small sample  
-- No duplicate retrieval stack  
+- [x] Mic question completes the same RAG path as typed chat  
+- [x] UX states visible; latency numbers recorded for a small sample  
+- [x] No duplicate retrieval stack  
 
 ---
 

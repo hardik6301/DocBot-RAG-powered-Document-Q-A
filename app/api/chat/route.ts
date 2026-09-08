@@ -107,16 +107,26 @@ export async function POST(request: Request) {
     }
 
     const question = body.question.trim();
+    const t0 = Date.now();
+
+    const tEmbed = Date.now();
     const vector = await embedQuery(question);
+    const embedMs = Date.now() - tEmbed;
+
     const namespace = doc.pineconeNs || user.supabaseId || user.id;
+    const tPine = Date.now();
     const matches = await querySimilar(
       namespace,
       vector,
       RETRIEVE_TOP_K,
       doc.id,
     );
+    const pineconeMs = Date.now() - tPine;
+
     const usable = matches.filter((m) => m.chunkText && m.score > 0.15);
+    const tRerank = Date.now();
     const ranked = await rerankChunks(question, usable, RERANK_KEEP);
+    const rerankMs = Date.now() - tRerank;
 
     let answer: string;
     let sources: {
@@ -124,6 +134,7 @@ export async function POST(request: Request) {
       page: number | null;
       filename: string;
     }[] = [];
+    let generateMs = 0;
 
     const support = assessGroundingSupport(question, ranked);
     if (!support.ok) {
@@ -134,6 +145,7 @@ export async function POST(request: Request) {
         page: m.page,
         filename: m.filename || doc.filename,
       }));
+      const tGen = Date.now();
       answer = await generateGroundedAnswer(
         question,
         sources.map((s) => ({
@@ -142,6 +154,7 @@ export async function POST(request: Request) {
           filename: s.filename,
         })),
       );
+      generateMs = Date.now() - tGen;
     }
 
     try {
@@ -154,7 +167,15 @@ export async function POST(request: Request) {
       console.error("chat history persist failed", persistError);
     }
 
-    return NextResponse.json({ answer, sources });
+    const timings = {
+      embedMs,
+      pineconeMs,
+      rerankMs,
+      generateMs,
+      totalMs: Date.now() - t0,
+    };
+
+    return NextResponse.json({ answer, sources, timings });
   } catch (e) {
     console.error("POST /api/chat failed", e);
     return NextResponse.json(
