@@ -87,9 +87,9 @@ export default function FileUpload({ onUpload, uploading, disabled }: Props) {
           </button>
         </p>
       )}
-      <p className="max-w-md text-on-surface-variant">
-        Supported: .pdf, .pptx, .docx, .txt, .md, .epub (Max 25MB). Scanned PDFs
-        use OCR automatically.
+      <p className="max-w-md text-[13px] leading-relaxed text-[#6B7280]">
+        Supports .pdf, .docx, .txt, .md, .pptx (Max 25MB). Auto-OCR extracted
+        for scanned documents.
       </p>
       {localError && (
         <p className="mt-3 text-body-sm text-error">{localError}</p>
