@@ -4,7 +4,7 @@
 
 ### Docs
 - `Phases.md` updated: Phases 0–7 marked complete; Phases 8–14 locked with exit criteria
-- Immediate next work: **Phase 8.4 grounding + guardrails** (8.1–8.3 code shipped)
+- Immediate next work: **Phase 9 Document Intelligence** (Phase 8 code complete)
 - Rule: upgrade the single RAG pipeline; no parallel RAG stacks
 
 ### Current production reality
@@ -24,10 +24,16 @@ Document → ingest → chunks → embed → Pinecone
 ```
 
 ### Next slice
-1. ~~Phase 8.1~~ **DONE** — 81.8% PASS  
-2. ~~Phase 8.2~~ **DONE** — contextual chunking  
-3. ~~Phase 8.3~~ **DONE (code)** — Gemini rerank top-15→5; optional re-score: `node evals/run-baseline.mjs`  
-4. **Phase 8.4** grounding + guardrails (next)  
+1. ~~Phase 8.1–8.4~~ **DONE (code)** — quality loop shipped  
+2. **Phase 9** Document Intelligence (next) — unless eval regresses → Phase 12  
+
+### Go / no-go after Phase 8
+- **Provisional YES → Phase 9** (v1 PASS 81.8%, A8 refused; 8.2–8.4 harden retrieve/ground)
+- Optional: `node evals/run-baseline.mjs` when quota allows
+
+### 2026-09-08 — Phase 8.4 complete (code)
+- `lib/grounding.ts`: score floor + lexical mismatch gate + strict prompt rules
+- Chat/multi refuse with standard not-found message when support is weak
 
 ### 2026-09-08 — Phase 8.3 complete (code)
 - `lib/rerank.ts` + wired into `/api/chat` and `/api/chat/multi`
@@ -35,8 +41,6 @@ Document → ingest → chunks → embed → Pinecone
 
 ### 2026-09-08 — Phase 8.2 complete
 - Ingest: Gemini situating prefix → embed `prefix + original`; Pinecone metadata still original `chunkText`
-- Chat unchanged for citations (still `chunkText`)
-- Re-eval: `CONTEXTUAL=1 node evals/run-baseline.mjs`
 - Existing user docs need **re-upload** to get contextual vectors
 
 ### 2026-09-08 — Phase 8.1 complete

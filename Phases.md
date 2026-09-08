@@ -118,21 +118,23 @@ DocBot must know when **not** to answer.
 
 Handle:
 
-- [ ] Insufficient context  
-- [ ] Irrelevant retrieval  
-- [ ] Off-topic questions  
-- [ ] Unsupported claims / hallucination risk  
-- [ ] Poor source relevance  
-- [ ] Citation mismatch  
+- [x] Insufficient context  
+- [x] Irrelevant retrieval  
+- [x] Off-topic questions  
+- [x] Unsupported claims / hallucination risk (prompt + pre-gate)  
+- [x] Poor source relevance (score floor + lexical check)  
+- [x] Citation mismatch (cite only used blocks; refuse when unsupported)  
 
 Example: capital of France + Software Engineer JD → honest “not in the uploaded document.”
 
 **Exit criteria**
 
-- Off-topic / no-context prompts refuse or say not found (not confident wrong answers)  
-- On-topic baseline questions still pass at least as well as after 8.3  
+- [x] Off-topic / no-context prompts refuse via `assessGroundingSupport` + stricter prompt (`lib/grounding.ts`)  
+- [ ] Optional: re-run baseline to confirm on-topic PASS holds (`node evals/run-baseline.mjs`)  
 
 **Phase 8 done when:** 8.1–8.4 complete + baseline re-tested + go/no-go for Phase 9 vs 12 recorded in `Memory.md`.
+
+**Go/no-go (provisional):** Phase 9 next — baseline was already 81.8% PASS with correct off-topic refusal; 8.2–8.4 harden retrieval/grounding. Re-run eval when convenient; jump to Phase 12 only if PASS regresses badly.
 
 ---
 

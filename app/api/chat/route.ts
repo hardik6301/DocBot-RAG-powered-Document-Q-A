@@ -13,6 +13,10 @@ import {
   RETRIEVE_TOP_K,
   rerankChunks,
 } from "@/lib/rerank";
+import {
+  NOT_IN_DOCUMENT_ANSWER,
+  assessGroundingSupport,
+} from "@/lib/grounding";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -121,9 +125,9 @@ export async function POST(request: Request) {
       filename: string;
     }[] = [];
 
-    if (ranked.length === 0) {
-      answer =
-        "I could not find relevant information in this document for that question.";
+    const support = assessGroundingSupport(question, ranked);
+    if (!support.ok) {
+      answer = NOT_IN_DOCUMENT_ANSWER;
     } else {
       sources = ranked.map((m) => ({
         chunkText: m.chunkText,

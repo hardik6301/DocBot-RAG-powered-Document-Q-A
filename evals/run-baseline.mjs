@@ -581,7 +581,7 @@ ANSWER:`;
 function scoreAnswer(row, answer, sources) {
   const a = (answer || "").toLowerCase();
   const refuse =
-    /could not find|cannot find|can't find|not (found|in|mentioned)|insufficient|no (relevant )?information|don't know|do not contain/i.test(
+    /could not find|couldn't find|cannot find|can't find|not (found|in|mentioned)|insufficient|no (relevant )?information|don't know|do not contain|uploaded document/i.test(
       answer || "",
     );
 
@@ -675,7 +675,7 @@ async function main() {
     let sources = [];
     if (ranked.length === 0) {
       answer =
-        "I could not find relevant information in this document for that question.";
+        "I couldn't find information about that in the uploaded document.";
     } else {
       sources = ranked.map((m) => ({
         chunkText: m.chunkText,

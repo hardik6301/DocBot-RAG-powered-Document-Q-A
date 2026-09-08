@@ -64,10 +64,10 @@ Upgrades (contextual chunking, rerank, hybrid, voice, comparison) plug into this
 2. Question → embedding vector  
 3. Pinecone similarity search (**top-15** candidates) in user namespace (optional `docId` filter)  
 4. **Gemini rerank (Phase 8.3)** → keep **top-5** by relevance  
-5. Build grounded prompt from reranked chunks (**original** `chunkText`)  
-6. Gemini generates answer from context only  
-7. Return answer + source citations  
-8. Persist messages; UI shows answer + source cards  
+5. **Grounding gate (Phase 8.4):** refuse if similarity/lexical support is too weak  
+6. Build grounded prompt from reranked chunks (**original** `chunkText`) with strict no-world-knowledge rules  
+7. Gemini generates answer from context only (or standard not-found message)  
+8. Return answer + source citations; persist messages  
 
 ---
 

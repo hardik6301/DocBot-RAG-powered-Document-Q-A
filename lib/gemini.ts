@@ -1,4 +1,8 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import {
+  NOT_IN_DOCUMENT_ANSWER,
+  groundingSystemRules,
+} from "@/lib/grounding";
 
 const EMBED_MODEL = "gemini-embedding-001";
 /** Must match Pinecone index dimension in lib/pinecone.ts */
@@ -107,6 +111,10 @@ export async function generateGroundedAnswer(
 ): Promise<string> {
   const genAI = getClient();
 
+  if (contextBlocks.length === 0) {
+    return NOT_IN_DOCUMENT_ANSWER;
+  }
+
   const context = contextBlocks
     .map(
       (c, i) =>
@@ -114,10 +122,7 @@ export async function generateGroundedAnswer(
     )
     .join("\n\n");
 
-  const prompt = `You are DocBot, a document Q&A assistant. Answer ONLY using the context below.
-If the context is insufficient, say you cannot find that information in the document.
-Cite sources inline like [1], [2] matching the context block numbers.
-Be concise and precise.
+  const prompt = `${groundingSystemRules()}
 
 CONTEXT:
 ${context}
@@ -139,9 +144,11 @@ ANSWER:`;
       // Try next model on quota / not-found for this model
       if (
         msg.includes("429") ||
+        msg.includes("503") ||
         msg.includes("404") ||
         msg.includes("not found") ||
-        msg.includes("quota")
+        msg.includes("quota") ||
+        msg.includes("high demand")
       ) {
         console.warn(`Gemini chat model ${modelName} failed, trying next…`, msg.slice(0, 120));
         continue;
