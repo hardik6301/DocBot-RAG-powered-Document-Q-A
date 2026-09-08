@@ -40,6 +40,18 @@ function iconFor(type: string) {
       iconBg: "bg-secondary-fixed",
       iconColor: "text-primary",
     };
+  if (type === "md" || type === "markdown")
+    return {
+      icon: "code",
+      iconBg: "bg-[#E8DEF8]",
+      iconColor: "text-[#4A4458]",
+    };
+  if (type === "txt")
+    return {
+      icon: "notes",
+      iconBg: "bg-[#E0E3E5]",
+      iconColor: "text-on-surface-variant",
+    };
   return {
     icon: "article",
     iconBg: "bg-[#E0E3E5]",

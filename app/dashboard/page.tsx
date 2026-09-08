@@ -291,7 +291,7 @@ export default function DashboardPage() {
                 Upload your first document to get started
               </h2>
               <p className="mt-2 text-body-md text-on-surface-variant">
-                PDF or PPT — then ask questions with source citations.
+                PDF, PPT, DOC, TXT, or Markdown — then ask with citations.
               </p>
             </div>
           ) : filtered.length === 0 ? (

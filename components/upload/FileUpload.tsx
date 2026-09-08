@@ -67,15 +67,15 @@ export default function FileUpload({ onUpload, uploading, disabled }: Props) {
         {uploading ? "Uploading…" : "Upload Document"}
       </h2>
       <p className="max-w-md text-on-surface-variant">
-        Drag and drop your PDF or PPT files here, or click to browse. Supported
-        formats: .pdf, .pptx, .docx (Max 25MB)
+        Drag and drop files here, or click to browse. Supported: .pdf, .pptx,
+        .docx, .txt, .md (Max 25MB)
       </p>
       {localError && (
         <p className="mt-3 text-body-sm text-error">{localError}</p>
       )}
       <input
         type="file"
-        accept=".pdf,.ppt,.pptx,.doc,.docx,application/pdf"
+        accept=".pdf,.ppt,.pptx,.doc,.docx,.txt,.md,.markdown,application/pdf,text/plain,text/markdown"
         className="hidden"
         disabled={disabled || uploading}
         onChange={(e) => {

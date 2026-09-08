@@ -14,6 +14,8 @@ import {
 } from "@/lib/documents/store";
 import { deleteUploadFile, saveUploadFile } from "@/lib/storage/files";
 import { ingestDocument } from "@/lib/ingest";
+import { RATE, rateLimit, rateLimitHeaders } from "@/lib/rate-limit";
+import { logEvent } from "@/lib/log";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -23,6 +25,20 @@ const MAX_BYTES = 25 * 1024 * 1024;
 export async function POST(request: Request) {
   const user = await requireUserOrResponse();
   if (user instanceof Response) return user;
+
+  const limited = rateLimit(
+    `upload:${user.id}`,
+    RATE.upload.limit,
+    RATE.upload.windowMs,
+  );
+  if (!limited.ok) {
+    return NextResponse.json(
+      {
+        error: `Upload rate limit exceeded. Try again in ${limited.retryAfterSec}s.`,
+      },
+      { status: 429, headers: rateLimitHeaders(limited) },
+    );
+  }
 
   const used = await countDocuments(user.id);
   if (BILLING_ENABLED && !user.isPro && used >= FREE_TIER_LIMIT) {
@@ -43,7 +59,10 @@ export async function POST(request: Request) {
 
   if (!isAllowedFile(file.name, file.type)) {
     return NextResponse.json(
-      { error: "Only PDF, PPT, and DOC files are allowed" },
+      {
+        error:
+          "Only PDF, PPT, DOC, TXT, and Markdown files are allowed",
+      },
       { status: 400 },
     );
   }
@@ -57,6 +76,7 @@ export async function POST(request: Request) {
 
   let docId: string | null = null;
   let fileUrl: string | null = null;
+  const started = Date.now();
 
   try {
     const saved = await saveUploadFile(user.id, file);
@@ -156,10 +176,29 @@ export async function POST(request: Request) {
       updatedAt: new Date().toISOString(),
     };
 
-    return NextResponse.json({ document }, { status: 201 });
+    logEvent("ingest.complete", {
+      userId: user.id,
+      docId: document.id,
+      fileType,
+      pageCount: document.pageCount,
+      chunkCount: document.chunkCount,
+      ms: Date.now() - started,
+    });
+
+    return NextResponse.json(
+      { document },
+      { status: 201, headers: rateLimitHeaders(limited) },
+    );
   } catch (e) {
     console.error("upload/ingest failed", e);
     const message = e instanceof Error ? e.message : "Upload failed";
+    logEvent("ingest.failed", {
+      level: "error",
+      userId: user.id,
+      docId,
+      ms: Date.now() - started,
+      error: message,
+    });
 
     if (docId) {
       await updateDocument(docId, user.id, { status: "failed" });

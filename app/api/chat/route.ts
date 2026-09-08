@@ -17,6 +17,8 @@ import {
   NOT_IN_DOCUMENT_ANSWER,
   assessGroundingSupport,
 } from "@/lib/grounding";
+import { RATE, rateLimit, rateLimitHeaders } from "@/lib/rate-limit";
+import { logEvent } from "@/lib/log";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -60,6 +62,20 @@ export async function POST(request: Request) {
   try {
     const user = await requireUserOrResponse();
     if (user instanceof Response) return user;
+
+    const limited = rateLimit(
+      `chat:${user.id}`,
+      RATE.chat.limit,
+      RATE.chat.windowMs,
+    );
+    if (!limited.ok) {
+      return NextResponse.json(
+        {
+          error: `Chat rate limit exceeded. Try again in ${limited.retryAfterSec}s.`,
+        },
+        { status: 429, headers: rateLimitHeaders(limited) },
+      );
+    }
 
     if (!isGeminiConfigured() || !isPineconeConfigured()) {
       return NextResponse.json(
@@ -175,7 +191,18 @@ export async function POST(request: Request) {
       totalMs: Date.now() - t0,
     };
 
-    return NextResponse.json({ answer, sources, timings });
+    logEvent("chat.complete", {
+      userId: user.id,
+      documentId: doc.id,
+      grounded: support.ok,
+      sourceCount: sources.length,
+      ...timings,
+    });
+
+    return NextResponse.json(
+      { answer, sources, timings },
+      { headers: rateLimitHeaders(limited) },
+    );
   } catch (e) {
     console.error("POST /api/chat failed", e);
     return NextResponse.json(

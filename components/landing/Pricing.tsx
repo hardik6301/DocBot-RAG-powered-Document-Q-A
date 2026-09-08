@@ -6,7 +6,7 @@ import Icon from "@/components/ui/Icon";
 
 const features = [
   "Unlimited documents",
-  "PDF, PPT, and DOC upload",
+  "PDF, PPT, DOC, TXT, and Markdown upload",
   "RAG answers with source citations",
   "Multi-document Q&A",
   "Chat history + PDF export",

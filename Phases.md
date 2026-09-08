@@ -244,35 +244,47 @@ Possible work (pick based on measured gaps):
 
 ## Phase 14 — Scale & Advanced Engineering
 
-### Documents
+Build as sub-phases. Collaboration last.
+
+### 14.1 — Text formats + guardrails (NEXT)
+
+- [x] TXT / Markdown ingest through existing RAG path  
+- [x] DOCX improvements (paragraph + page-break aware extraction)  
+- [x] Upload/chat rate limiting (in-memory per instance)  
+- [x] Structured JSON event logs (`ingest.*`, `chat.complete`)  
+
+**Exit criteria**
+
+- [x] `.txt` / `.md` upload reaches `ready` and answers via `/api/chat`  
+- [x] DOCX extraction preserves paragraphs / soft pages better than flat dump  
+
+### 14.2 — Advanced document sources
 
 - [ ] OCR for scanned PDFs  
-- [ ] TXT / Markdown  
-- [ ] DOCX improvements  
 - [ ] EPUB  
 - [ ] Optional URL/webpage ingestion  
 
-### Infrastructure
+### 14.3 — Infrastructure
 
 - [ ] Background processing / job queue  
-- [ ] Retries  
-- [ ] Rate limiting  
-- [ ] Better observability  
+- [ ] Retries (ingest job-level)  
+- [x] Rate limiting (started in 14.1)  
+- [x] Better observability (started in 14.1; expand later)  
 
-### Monetization
+### 14.4 — Monetization
 
 - [ ] Enable real Stripe (`BILLING_ENABLED=true`)  
 - [ ] Usage limits / Pro quotas  
 - [ ] Subscription management polish  
 
-### Formal RAG evaluation
+### 14.5 — Formal RAG evaluation
 
 - [ ] Golden questions harness  
 - [ ] Retrieval metrics, answer quality, citation correctness, groundedness  
 - [ ] Latency + regression tracking  
 - [ ] Automated evaluation where practical  
 
-### Collaboration
+### 14.6 — Collaboration (last)
 
 - [ ] Sharing  
 - [ ] Workspaces / teams  

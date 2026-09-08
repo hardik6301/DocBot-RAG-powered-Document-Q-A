@@ -390,12 +390,18 @@ export function isAllowedFile(filename: string, mime: string) {
     lower.endsWith(".ppt") ||
     lower.endsWith(".pptx") ||
     lower.endsWith(".doc") ||
-    lower.endsWith(".docx");
+    lower.endsWith(".docx") ||
+    lower.endsWith(".txt") ||
+    lower.endsWith(".md") ||
+    lower.endsWith(".markdown");
   const okMime =
     mime.includes("pdf") ||
     mime.includes("presentation") ||
     mime.includes("msword") ||
     mime.includes("officedocument") ||
+    mime.includes("text/plain") ||
+    mime.includes("text/markdown") ||
+    mime.includes("markdown") ||
     mime === "" ||
     mime === "application/octet-stream";
   return okExt && okMime;
@@ -406,6 +412,8 @@ export function detectFileType(filename: string): string {
   if (lower.endsWith(".pdf")) return "pdf";
   if (lower.endsWith(".ppt") || lower.endsWith(".pptx")) return "ppt";
   if (lower.endsWith(".doc") || lower.endsWith(".docx")) return "docx";
+  if (lower.endsWith(".md") || lower.endsWith(".markdown")) return "md";
+  if (lower.endsWith(".txt")) return "txt";
   return "unknown";
 }
 

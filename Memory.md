@@ -4,7 +4,7 @@
 
 ### Docs
 - `Phases.md` updated: Phases 0–7 marked complete; Phases 8–14 locked with exit criteria
-- Immediate next work: **Phase 14 Scale & Advanced Engineering** (Phase 12 only if RAG quality regresses)
+- Immediate next work: **Phase 14.2** Advanced document sources (OCR / EPUB / URL) — or 14.3 queue if sync ingest becomes the bottleneck
 - Rule: upgrade the single RAG pipeline; no parallel RAG stacks
 
 ### Current production reality
@@ -24,8 +24,15 @@ Document → ingest → chunks → embed → Pinecone
 ```
 
 ### Next slice
-1. ~~Phase 8–13~~ **DONE (code)**  
-2. **Phase 14** Scale & Advanced Engineering (next) — skip **Phase 12** unless eval shows retrieval still weak  
+1. ~~Phase 8–13~~ **DONE**  
+2. ~~Phase 14.1~~ **DONE (code)** — TXT/MD + DOCX + rate limit + logs  
+3. **Phase 14.2** OCR / EPUB / URL (next)  
+
+### 2026-09-08 — Phase 14.1 complete (code)
+- Ingest: `.txt` / `.md` (+ markdown heading sections); improved DOCX paragraph/page-break packing
+- Upload accept + type detect updated; same Pinecone RAG path
+- Rate limits: upload 20/hour, chat 60/min (in-memory); `X-RateLimit-*` headers
+- Structured logs: `ingest.complete` / `ingest.failed` / `chat.complete`
 
 ### 2026-09-08 — Phase 13 complete (code)
 - Document org: `folder`, `tags`, `archived`/`archivedAt` (+ indexes); `PATCH /api/documents/[id]`
@@ -51,7 +58,7 @@ Document → ingest → chunks → embed → Pinecone
 - Re-upload older docs to generate overview
 
 ### Go / no-go after Phase 8
-- **Provisional YES → Phase 9** (shipped) → 10 → 11 → 13 shipped; **14 next** (12 only if needed)
+- **Provisional YES → Phase 9…13 shipped; 14.1 shipped; 14.2 next** (12 only if needed)
 
 ### 2026-09-08 — Phase 8.4 complete (code)
 - `lib/grounding.ts`: score floor + lexical mismatch gate + strict prompt rules

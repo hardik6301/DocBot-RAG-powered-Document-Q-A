@@ -9,11 +9,14 @@ export type LoadedPage = {
 
 function extractTaggedText(xml: string, pattern: RegExp): string[] {
   const out: string[] = [];
-  const re = new RegExp(pattern.source, pattern.flags.includes("g") ? pattern.flags : `${pattern.flags}g`);
+  const re = new RegExp(
+    pattern.source,
+    pattern.flags.includes("g") ? pattern.flags : `${pattern.flags}g`,
+  );
   let m: RegExpExecArray | null;
   while ((m = re.exec(xml)) !== null) {
-    const t = m[1]?.trim();
-    if (t) out.push(t);
+    const t = m[1];
+    if (t != null && t.length) out.push(t);
   }
   return out;
 }
@@ -21,6 +24,7 @@ function extractTaggedText(xml: string, pattern: RegExp): string[] {
 /** ~500 tokens / ~50 overlap at ~4 chars/token */
 const CHUNK_SIZE = 2000;
 const CHUNK_OVERLAP = 200;
+const SECTION_TARGET = 2800;
 
 export async function loadDocumentFile(
   absPath: string,
@@ -29,7 +33,9 @@ export async function loadDocumentFile(
   const lower = fileType.toLowerCase();
   if (lower === "pdf") return loadPdf(absPath);
   if (lower === "ppt") return loadPptx(absPath);
-  if (lower === "docx") return loadDocxLike(absPath);
+  if (lower === "docx" || lower === "doc") return loadDocxLike(absPath);
+  if (lower === "txt") return loadPlainText(absPath);
+  if (lower === "md" || lower === "markdown") return loadMarkdown(absPath);
   throw new Error(`Unsupported file type for ingestion: ${fileType}`);
 }
 
@@ -87,7 +93,7 @@ async function loadPptx(absPath: string): Promise<LoadedPage[]> {
 
   const pages: LoadedPage[] = [];
   for (const name of slideFiles) {
-    const xml = await zip.files[name].async("string");
+    const xml = await zip.files[name]!.async("string");
     const texts = extractTaggedText(xml, /<a:t[^>]*>([^<]*)<\/a:t>/g);
     const text = texts.filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
     const page = Number(name.match(/slide(\d+)/i)?.[1] || pages.length + 1);
@@ -98,17 +104,105 @@ async function loadPptx(absPath: string): Promise<LoadedPage[]> {
   return pages;
 }
 
+/**
+ * Improved DOCX: paragraph-aware extraction, page-break sections,
+ * and soft packing into ~SECTION_TARGET char pages for citations.
+ */
 async function loadDocxLike(absPath: string): Promise<LoadedPage[]> {
-  // Minimal docx: word/document.xml text nodes
   const buffer = await fs.readFile(absPath);
   const zip = await JSZip.loadAsync(buffer);
   const doc = zip.file("word/document.xml");
   if (!doc) throw new Error("Invalid DOC/DOCX file");
   const xml = await doc.async("string");
-  const texts = extractTaggedText(xml, /<w:t[^>]*>([^<]*)<\/w:t>/g);
-  const text = texts.filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
-  if (!text) throw new Error("No text extracted from DOC/DOCX");
-  return [{ page: 1, text }];
+
+  const paraBlocks = xml.split(/<w:p[\s>]/i).slice(1);
+  if (paraBlocks.length === 0) {
+    // Fallback: flat text nodes
+    const texts = extractTaggedText(xml, /<w:t[^>]*>([^<]*)<\/w:t>/g);
+    const text = texts.join("").replace(/\s+/g, " ").trim();
+    if (!text) throw new Error("No text extracted from DOC/DOCX");
+    return packSections([text]);
+  }
+
+  const sections: string[][] = [[]];
+  for (const block of paraBlocks) {
+    const runs = extractTaggedText(block, /<w:t[^>]*>([^<]*)<\/w:t>/g);
+    // Word often splits mid-word across <w:t> — join without spaces.
+    const para = runs.join("").replace(/\s+/g, " ").trim();
+    if (para) sections[sections.length - 1]!.push(para);
+
+    const pageBreak =
+      /w:type\s*=\s*["']page["']/i.test(block) ||
+      /lastRenderedPageBreak/i.test(block);
+    if (pageBreak && sections[sections.length - 1]!.length > 0) {
+      sections.push([]);
+    }
+  }
+
+  const joined = sections
+    .map((paras) => paras.join("\n\n").trim())
+    .filter(Boolean);
+
+  if (!joined.length) throw new Error("No text extracted from DOC/DOCX");
+  return packSections(joined);
+}
+
+async function loadPlainText(absPath: string): Promise<LoadedPage[]> {
+  const raw = (await fs.readFile(absPath, "utf8")).replace(/^\uFEFF/, "").trim();
+  if (!raw) throw new Error("Empty text file");
+  const paragraphs = raw
+    .split(/\n{2,}/)
+    .map((p) => p.replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+  if (!paragraphs.length) throw new Error("Empty text file");
+  return packSections(paragraphs);
+}
+
+async function loadMarkdown(absPath: string): Promise<LoadedPage[]> {
+  const raw = (await fs.readFile(absPath, "utf8")).replace(/^\uFEFF/, "").trim();
+  if (!raw) throw new Error("Empty markdown file");
+
+  // Split on ATX headings while keeping the heading with its body.
+  const parts = raw
+    .split(/(?=^#{1,6}\s+)/m)
+    .map((p) => p.trim())
+    .filter(Boolean);
+
+  if (parts.length <= 1) {
+    const paragraphs = raw
+      .split(/\n{2,}/)
+      .map((p) => p.trim())
+      .filter(Boolean);
+    return packSections(paragraphs.length ? paragraphs : [raw]);
+  }
+
+  return packSections(parts);
+}
+
+/** Pack string units into citation-friendly pages near SECTION_TARGET chars. */
+function packSections(units: string[]): LoadedPage[] {
+  const pages: LoadedPage[] = [];
+  let buf = "";
+
+  const flush = () => {
+    const text = buf.trim();
+    if (!text) return;
+    pages.push({ page: pages.length + 1, text });
+    buf = "";
+  };
+
+  for (const unit of units) {
+    const next = buf ? `${buf}\n\n${unit}` : unit;
+    if (buf && next.length > SECTION_TARGET) {
+      flush();
+      buf = unit;
+    } else {
+      buf = next;
+    }
+  }
+  flush();
+
+  return pages.length ? pages : [{ page: 1, text: units.join("\n\n") }];
 }
 
 export type TextChunk = {
