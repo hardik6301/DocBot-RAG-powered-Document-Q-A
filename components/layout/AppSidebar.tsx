@@ -127,14 +127,11 @@ export default function AppSidebar({
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="flex items-center gap-2.5 px-4 pb-2 pt-5">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-on-primary">
-            <Icon name="description" className="text-[18px]" filled />
-          </span>
+        <div className="px-4 pb-2 pt-5">
           <Link
             href="/dashboard"
             onClick={navigate}
-            className="text-[17px] font-bold tracking-tight text-on-surface"
+            className="cursor-pointer text-[1.375rem] font-bold leading-none tracking-tight text-[#1D4ED8] transition-opacity duration-200 hover:opacity-90"
           >
             DocBot
           </Link>
