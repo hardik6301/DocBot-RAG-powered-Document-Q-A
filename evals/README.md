@@ -4,21 +4,18 @@ Manual RAG quality benchmarks (Phase 8+). No automated harness yet.
 
 ## Phase 8.1 — Baseline
 
-1. Start DocBot (`npm run dev`) and sign in.  
-2. Upload the three PDFs in `fixtures/` (separate uploads).  
-3. Wait until each doc is **ready**.  
-4. Open chat per document and ask every question in `baseline-v1.md`.  
-5. Copy the template:
-
 ```bash
-cp evals/baseline-v1.md evals/results/baseline-v1-filled.md
+# ingest fixtures + ask all questions (needs GEMINI + PINECONE in .env.local)
+node evals/run-baseline.mjs
 ```
 
-6. Fill **Actual answer**, **Actual source**, **Result** (PASS / PARTIAL / FAIL).  
-7. Complete the Summary + failure-pattern checkboxes.  
-8. Update `Memory.md` with PASS rate, then commit that results slice.
+Writes `results/baseline-v1-filled.md` and `results/baseline-v1-raw.json`.
 
-**Do not change retrieval code until the filled baseline exists.** Phases 8.2–8.4 need this before/after score.
+**v1 result (2026-09-08):** 18 PASS / 4 PARTIAL / 0 FAIL → **81.8% PASS**
+
+Manual UI option: upload `fixtures/` PDFs and fill a copy of `baseline-v1.md` by hand.
+
+**Do not change retrieval code until this baseline exists** (it does). Phases 8.2–8.4 re-run the same questions for before/after.
 
 ## Fixtures
 

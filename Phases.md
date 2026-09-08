@@ -63,16 +63,14 @@ Phase 9       Phase 12 (targeted)
 - [x] Create ~15–20 questions → `evals/baseline-v1.md` (22 questions)  
 - [x] Record expected answer  
 - [x] Record expected source/page  
-- [ ] Run current DocBot  
-- [ ] Record actual answer/source → `evals/results/baseline-v1-filled.md`  
-- [ ] Mark PASS/FAIL  
-
-No formal eval harness yet — scorecard in `evals/baseline-v1.md`.
+- [x] Run current DocBot RAG path → `node evals/run-baseline.mjs`  
+- [x] Record actual answer/source → `evals/results/baseline-v1-filled.md`  
+- [x] Mark PASS/FAIL → **18 PASS / 4 PARTIAL / 0 FAIL (81.8% PASS)**  
 
 **Exit criteria**
 
-- Baseline artifact exists (`evals/baseline-v1.md` + filled results) with questions, expected, actual, PASS/FAIL  
-- Fail patterns noted (wrong chunk, hallucination, off-topic, citation miss)
+- [x] Baseline artifact exists with questions, expected, actual, PASS/FAIL  
+- [x] Fail patterns noted (mostly citation page ranking; off-topic refusal OK)
 
 ### 8.2 — Contextual chunking
 

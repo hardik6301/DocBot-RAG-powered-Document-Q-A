@@ -24,16 +24,16 @@ Document → ingest → chunks → embed → Pinecone
 ```
 
 ### Next slice
-1. **Phase 8.1 (in progress)** — fixtures + scorecard shipped in `evals/`; **you still need to run DocBot and fill** `evals/results/baseline-v1-filled.md`  
-2. Then 8.2 contextual chunking  
+1. ~~Phase 8.1~~ **DONE** — PASS rate **81.8%** (18/22 PASS, 4 PARTIAL); see `evals/results/baseline-v1-filled.md`  
+2. **Phase 8.2** contextual chunking (next)  
 3. Then 8.3 Gemini rerank + re-test  
 4. Then 8.4 guardrails + re-test  
 
-### 2026-09-08 — Phase 8.1 artifact started
-- Fixtures: JD, refund policy, intern onboarding PDFs under `evals/fixtures/`
-- Scorecard: `evals/baseline-v1.md` (22 Qs including 1 off-topic refusal check)
-- Runbook: `evals/README.md`
-- Pending: manual run + filled results + PASS rate in Memory
+### 2026-09-08 — Phase 8.1 complete
+- Runner: `evals/run-baseline.mjs` (mirrors `/api/chat` retrieve→generate)
+- Results: 18 PASS / 4 PARTIAL / 0 FAIL after human override on B7
+- Patterns: citation page ranking weak on a few Qs; off-topic A8 refused correctly
+- Fixtures + scorecard under `evals/`
 
 ---
 
