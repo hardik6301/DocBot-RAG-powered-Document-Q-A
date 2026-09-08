@@ -13,6 +13,7 @@ export default function FileUpload({ onUpload, uploading, disabled }: Props) {
   const [dragging, setDragging] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
   const busyRef = useRef(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const handleFiles = useCallback(
     async (files: FileList | null) => {
@@ -31,7 +32,7 @@ export default function FileUpload({ onUpload, uploading, disabled }: Props) {
   );
 
   return (
-    <label
+    <div
       onDragEnter={(e) => {
         e.preventDefault();
         if (!disabled) setDragging(true);
@@ -49,6 +50,9 @@ export default function FileUpload({ onUpload, uploading, disabled }: Props) {
         setDragging(false);
         void handleFiles(e.dataTransfer.files);
       }}
+      onClick={() => {
+        if (!disabled && !uploading) inputRef.current?.click();
+      }}
       className={`upload-dashed group flex min-h-[240px] w-full cursor-pointer flex-col items-center justify-center rounded-xl p-stack-lg text-center transition-all ${
         disabled
           ? "cursor-not-allowed opacity-60"
@@ -63,17 +67,35 @@ export default function FileUpload({ onUpload, uploading, disabled }: Props) {
           className={`text-[32px] text-primary ${uploading ? "animate-pulse" : ""}`}
         />
       </div>
-      <h2 className="mb-2 text-headline-lg text-on-surface">
-        {uploading ? "Uploading…" : "Upload Document"}
-      </h2>
+      {uploading ? (
+        <h2 className="mb-2 text-headline-lg font-bold text-on-surface">
+          Uploading…
+        </h2>
+      ) : (
+        <p className="mb-2 text-headline-lg font-bold text-on-surface">
+          Drag and drop files here, or{" "}
+          <button
+            type="button"
+            disabled={disabled || uploading}
+            onClick={(e) => {
+              e.stopPropagation();
+              inputRef.current?.click();
+            }}
+            className="text-primary underline underline-offset-2 transition-opacity hover:opacity-80 disabled:cursor-not-allowed"
+          >
+            browse files
+          </button>
+        </p>
+      )}
       <p className="max-w-md text-on-surface-variant">
-        Drag and drop files here, or click to browse. Supported: .pdf, .pptx,
-        .docx, .txt, .md, .epub (Max 25MB). Scanned PDFs use OCR automatically.
+        Supported: .pdf, .pptx, .docx, .txt, .md, .epub (Max 25MB). Scanned PDFs
+        use OCR automatically.
       </p>
       {localError && (
         <p className="mt-3 text-body-sm text-error">{localError}</p>
       )}
       <input
+        ref={inputRef}
         type="file"
         accept=".pdf,.ppt,.pptx,.doc,.docx,.txt,.md,.markdown,.epub,application/pdf,text/plain,text/markdown,application/epub+zip"
         className="hidden"
@@ -83,6 +105,6 @@ export default function FileUpload({ onUpload, uploading, disabled }: Props) {
           e.target.value = "";
         }}
       />
-    </label>
+    </div>
   );
 }
