@@ -10,19 +10,12 @@ export default function BillingCancelPage() {
         <Icon name="cancel" className="mb-4 text-[48px] text-outline" />
         <h1 className="text-headline-xl text-on-surface">Checkout canceled</h1>
         <p className="mt-3 text-body-md text-on-surface-variant">
-          No charge was made. You can upgrade anytime from pricing or the
-          dashboard.
+          No charge was made. Return to your dashboard to keep using DocBot.
         </p>
-        <div className="mt-8 flex flex-wrap justify-center gap-3">
-          <Link
-            href="/#pricing"
-            className="rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-on-primary"
-          >
-            View pricing
-          </Link>
+        <div className="mt-8">
           <Link
             href="/dashboard"
-            className="rounded-xl border border-outline-variant px-6 py-3 text-sm font-semibold text-on-surface"
+            className="rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-on-primary"
           >
             Dashboard
           </Link>

@@ -26,7 +26,6 @@ const appLinks = [
 
 const marketingLinks = [
   { href: "/#how", label: "How it works" },
-  { href: "/#pricing", label: "Pricing" },
 ];
 
 export default function Navbar({
