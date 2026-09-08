@@ -226,13 +226,6 @@ export default function Navbar({
         <Icon name="menu" className="text-[22px]" />
       </button>
 
-      <Link
-        href="/dashboard"
-        className="shrink-0 text-[17px] font-bold tracking-tight text-on-surface"
-      >
-        DocBot
-      </Link>
-
       <div className="mx-auto hidden min-w-0 max-w-xl flex-1 sm:block">
         <div className="relative">
           <Icon
