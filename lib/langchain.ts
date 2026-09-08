@@ -1,6 +1,8 @@
 import { promises as fs } from "fs";
 import JSZip from "jszip";
 import { resolveUploadPath } from "@/lib/storage/local";
+import { looksLikeScannedPdf, ocrPdfWithGemini } from "@/lib/ocr";
+import { loadEpub } from "@/lib/epub";
 
 export type LoadedPage = {
   page: number;
@@ -34,8 +36,9 @@ export async function loadDocumentFile(
   if (lower === "pdf") return loadPdf(absPath);
   if (lower === "ppt") return loadPptx(absPath);
   if (lower === "docx" || lower === "doc") return loadDocxLike(absPath);
-  if (lower === "txt") return loadPlainText(absPath);
+  if (lower === "txt" || lower === "url") return loadPlainText(absPath);
   if (lower === "md" || lower === "markdown") return loadMarkdown(absPath);
+  if (lower === "epub") return loadEpub(absPath);
   throw new Error(`Unsupported file type for ingestion: ${fileType}`);
 }
 
@@ -45,35 +48,46 @@ async function loadPdf(absPath: string): Promise<LoadedPage[]> {
   const { CanvasFactory } = await import("pdf-parse/worker");
   const { PDFParse } = await import("pdf-parse");
   const parser = new PDFParse({ data: buffer, CanvasFactory });
-  const textResult = await parser.getText();
-  const info = await parser.getInfo().catch(() => null);
-  await parser.destroy().catch(() => undefined);
+  let pages: LoadedPage[] = [];
 
-  const raw = (typeof textResult === "string"
-    ? textResult
-    : (textResult as { text?: string })?.text || ""
-  ).trim();
+  try {
+    const textResult = await parser.getText();
+    const info = await parser.getInfo().catch(() => null);
 
-  if (!raw) throw new Error("No text extracted from PDF");
+    const raw = (typeof textResult === "string"
+      ? textResult
+      : (textResult as { text?: string })?.text || ""
+    ).trim();
 
-  const parts = raw.split(/\f+/).map((p) => p.trim()).filter(Boolean);
-  if (parts.length > 1) {
-    return parts.map((text, i) => ({ page: i + 1, text }));
+    if (raw) {
+      const parts = raw.split(/\f+/).map((p) => p.trim()).filter(Boolean);
+      if (parts.length > 1) {
+        pages = parts.map((text, i) => ({ page: i + 1, text }));
+      } else {
+        const pageCount = Math.max(
+          1,
+          Number((info as { total?: number } | null)?.total) || 1,
+        );
+        if (pageCount === 1) {
+          pages = [{ page: 1, text: raw }];
+        } else {
+          const approx = Math.ceil(raw.length / pageCount);
+          for (let i = 0; i < pageCount; i++) {
+            const slice = raw.slice(i * approx, (i + 1) * approx).trim();
+            if (slice) pages.push({ page: i + 1, text: slice });
+          }
+          if (!pages.length) pages = [{ page: 1, text: raw }];
+        }
+      }
+    }
+  } finally {
+    await parser.destroy().catch(() => undefined);
   }
 
-  const pageCount = Math.max(
-    1,
-    Number((info as { total?: number } | null)?.total) || 1,
-  );
-  if (pageCount === 1) return [{ page: 1, text: raw }];
+  if (!looksLikeScannedPdf(pages)) return pages;
 
-  const approx = Math.ceil(raw.length / pageCount);
-  const pages: LoadedPage[] = [];
-  for (let i = 0; i < pageCount; i++) {
-    const slice = raw.slice(i * approx, (i + 1) * approx).trim();
-    if (slice) pages.push({ page: i + 1, text: slice });
-  }
-  return pages.length ? pages : [{ page: 1, text: raw }];
+  // Scanned / image-only PDF → Gemini multimodal OCR fallback.
+  return ocrPdfWithGemini(buffer);
 }
 
 async function loadPptx(absPath: string): Promise<LoadedPage[]> {

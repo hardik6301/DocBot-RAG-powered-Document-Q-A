@@ -5,6 +5,7 @@ import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import FileUpload from "@/components/upload/FileUpload";
+import UrlImport from "@/components/upload/UrlImport";
 import ProcessingStatus from "@/components/upload/ProcessingStatus";
 import DocumentCard from "@/components/dashboard/DocumentCard";
 import DeployBanner from "@/components/dashboard/DeployBanner";
@@ -20,6 +21,7 @@ export default function DashboardPage() {
     error,
     uploading,
     upload,
+    ingestUrl,
     remove,
     patch,
   } = useDocuments();
@@ -270,6 +272,11 @@ export default function DashboardPage() {
               uploading={uploading}
               disabled={atLimit}
             />
+            <UrlImport
+              onIngest={ingestUrl}
+              busy={uploading}
+              disabled={atLimit}
+            />
           </section>
 
           {loading ? (
@@ -291,7 +298,8 @@ export default function DashboardPage() {
                 Upload your first document to get started
               </h2>
               <p className="mt-2 text-body-md text-on-surface-variant">
-                PDF, PPT, DOC, TXT, or Markdown — then ask with citations.
+                PDF, PPT, DOC, TXT, Markdown, EPUB, or a webpage URL — then ask
+                with citations.
               </p>
             </div>
           ) : filtered.length === 0 ? (

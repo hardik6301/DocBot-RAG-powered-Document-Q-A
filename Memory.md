@@ -4,7 +4,7 @@
 
 ### Docs
 - `Phases.md` updated: Phases 0–7 marked complete; Phases 8–14 locked with exit criteria
-- Immediate next work: **Phase 14.2** Advanced document sources (OCR / EPUB / URL) — or 14.3 queue if sync ingest becomes the bottleneck
+- Immediate next work: **Phase 14.3** Infrastructure (background ingest queue + retries)
 - Rule: upgrade the single RAG pipeline; no parallel RAG stacks
 
 ### Current production reality
@@ -25,8 +25,14 @@ Document → ingest → chunks → embed → Pinecone
 
 ### Next slice
 1. ~~Phase 8–13~~ **DONE**  
-2. ~~Phase 14.1~~ **DONE (code)** — TXT/MD + DOCX + rate limit + logs  
-3. **Phase 14.2** OCR / EPUB / URL (next)  
+2. ~~Phase 14.1–14.2~~ **DONE (code)**  
+3. **Phase 14.3** job queue + ingest retries (next)  
+
+### 2026-09-08 — Phase 14.2 complete (code)
+- Scanned PDF OCR via Gemini multimodal when pdf-parse text is empty/sparse (`lib/ocr.ts`)
+- EPUB spine/chapter extract (`lib/epub.ts`) through same ingest path
+- URL import: `POST /api/ingest/url` + dashboard `UrlImport` (SSRF host blocklist, 2MB/15s caps)
+- Logs: `ingest.ocr`, `ingest.url`
 
 ### 2026-09-08 — Phase 14.1 complete (code)
 - Ingest: `.txt` / `.md` (+ markdown heading sections); improved DOCX paragraph/page-break packing
@@ -58,7 +64,7 @@ Document → ingest → chunks → embed → Pinecone
 - Re-upload older docs to generate overview
 
 ### Go / no-go after Phase 8
-- **Provisional YES → Phase 9…13 shipped; 14.1 shipped; 14.2 next** (12 only if needed)
+- **Provisional YES → Phase 9…13 + 14.1–14.2 shipped; 14.3 next** (12 only if needed)
 
 ### 2026-09-08 — Phase 8.4 complete (code)
 - `lib/grounding.ts`: score floor + lexical mismatch gate + strict prompt rules

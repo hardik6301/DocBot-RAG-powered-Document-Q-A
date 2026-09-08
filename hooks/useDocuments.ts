@@ -75,6 +75,42 @@ export function useDocuments() {
     [refresh],
   );
 
+  const ingestUrl = useCallback(
+    async (url: string) => {
+      if (uploadLock.current) return undefined as unknown as AppDocument;
+      uploadLock.current = true;
+      setUploading(true);
+      setError(null);
+      try {
+        const res = await fetch("/api/ingest/url", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "URL ingest failed");
+        const uploaded = data.document as AppDocument | undefined;
+        if (uploaded) {
+          setDocuments((prev) => [
+            uploaded,
+            ...prev.filter((d) => d.id !== uploaded.id),
+          ]);
+        }
+        await refresh();
+        return uploaded as AppDocument;
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "URL ingest failed";
+        setError(msg);
+        throw e;
+      } finally {
+        uploadLock.current = false;
+        setUploading(false);
+      }
+    },
+    [refresh],
+  );
+
   const remove = useCallback(
     async (id: string) => {
       setError(null);
@@ -139,6 +175,7 @@ export function useDocuments() {
     uploading,
     refresh,
     upload,
+    ingestUrl,
     remove,
     patch,
     setPro,

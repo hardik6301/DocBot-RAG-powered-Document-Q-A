@@ -31,19 +31,35 @@ export async function saveUploadFile(
   userId: string,
   file: File,
 ): Promise<{ fileUrl: string; absPath: string | null; size: number }> {
+  const bytes = Buffer.from(await file.arrayBuffer());
+  return saveUploadBytes(userId, {
+    filename: file.name,
+    bytes,
+    contentType: file.type || "application/octet-stream",
+  });
+}
+
+export async function saveUploadBytes(
+  userId: string,
+  opts: { filename: string; bytes: Buffer; contentType?: string },
+): Promise<{ fileUrl: string; absPath: string | null; size: number }> {
+  const { filename, bytes, contentType = "application/octet-stream" } = opts;
+
   if (!isStorageConfigured()) {
+    const file = new File([new Uint8Array(bytes)], filename, {
+      type: contentType,
+    });
     const local = await saveLocalFile(userId, file);
     return { fileUrl: local.fileUrl, absPath: local.absPath, size: local.size };
   }
 
-  const bytes = Buffer.from(await file.arrayBuffer());
-  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+  const safeName = filename.replace(/[^a-zA-Z0-9._-]/g, "_");
   const key = `${userId}/${randomUUID()}-${safeName}`;
   const bucket = storageBucket();
   const supabase = createServiceClient();
 
   const { error } = await supabase.storage.from(bucket).upload(key, bytes, {
-    contentType: file.type || "application/octet-stream",
+    contentType,
     upsert: false,
   });
   if (error) {

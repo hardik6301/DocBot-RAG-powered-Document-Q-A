@@ -68,14 +68,14 @@ export default function FileUpload({ onUpload, uploading, disabled }: Props) {
       </h2>
       <p className="max-w-md text-on-surface-variant">
         Drag and drop files here, or click to browse. Supported: .pdf, .pptx,
-        .docx, .txt, .md (Max 25MB)
+        .docx, .txt, .md, .epub (Max 25MB). Scanned PDFs use OCR automatically.
       </p>
       {localError && (
         <p className="mt-3 text-body-sm text-error">{localError}</p>
       )}
       <input
         type="file"
-        accept=".pdf,.ppt,.pptx,.doc,.docx,.txt,.md,.markdown,application/pdf,text/plain,text/markdown"
+        accept=".pdf,.ppt,.pptx,.doc,.docx,.txt,.md,.markdown,.epub,application/pdf,text/plain,text/markdown,application/epub+zip"
         className="hidden"
         disabled={disabled || uploading}
         onChange={(e) => {

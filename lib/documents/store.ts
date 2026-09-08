@@ -393,7 +393,8 @@ export function isAllowedFile(filename: string, mime: string) {
     lower.endsWith(".docx") ||
     lower.endsWith(".txt") ||
     lower.endsWith(".md") ||
-    lower.endsWith(".markdown");
+    lower.endsWith(".markdown") ||
+    lower.endsWith(".epub");
   const okMime =
     mime.includes("pdf") ||
     mime.includes("presentation") ||
@@ -402,6 +403,7 @@ export function isAllowedFile(filename: string, mime: string) {
     mime.includes("text/plain") ||
     mime.includes("text/markdown") ||
     mime.includes("markdown") ||
+    mime.includes("epub") ||
     mime === "" ||
     mime === "application/octet-stream";
   return okExt && okMime;
@@ -414,6 +416,7 @@ export function detectFileType(filename: string): string {
   if (lower.endsWith(".doc") || lower.endsWith(".docx")) return "docx";
   if (lower.endsWith(".md") || lower.endsWith(".markdown")) return "md";
   if (lower.endsWith(".txt")) return "txt";
+  if (lower.endsWith(".epub")) return "epub";
   return "unknown";
 }
 

@@ -246,7 +246,7 @@ Possible work (pick based on measured gaps):
 
 Build as sub-phases. Collaboration last.
 
-### 14.1 — Text formats + guardrails (NEXT)
+### 14.1 — Text formats + guardrails
 
 - [x] TXT / Markdown ingest through existing RAG path  
 - [x] DOCX improvements (paragraph + page-break aware extraction)  
@@ -260,9 +260,14 @@ Build as sub-phases. Collaboration last.
 
 ### 14.2 — Advanced document sources
 
-- [ ] OCR for scanned PDFs  
-- [ ] EPUB  
-- [ ] Optional URL/webpage ingestion  
+- [x] OCR for scanned PDFs (Gemini multimodal fallback when text extract is empty/sparse)  
+- [x] EPUB  
+- [x] Optional URL/webpage ingestion (`POST /api/ingest/url`, SSRF-safe)  
+
+**Exit criteria**
+
+- [x] Scanned/image PDF can still reach `ready` via OCR path  
+- [x] `.epub` and public URL imports use the same Pinecone RAG contract  
 
 ### 14.3 — Infrastructure
 

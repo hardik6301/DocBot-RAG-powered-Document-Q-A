@@ -40,6 +40,18 @@ function iconFor(type: string) {
       iconBg: "bg-secondary-fixed",
       iconColor: "text-primary",
     };
+  if (type === "epub")
+    return {
+      icon: "menu_book",
+      iconBg: "bg-[#FFE08C]",
+      iconColor: "text-[#6F5B00]",
+    };
+  if (type === "url")
+    return {
+      icon: "language",
+      iconBg: "bg-[#C8E6C9]",
+      iconColor: "text-[#1B5E20]",
+    };
   if (type === "md" || type === "markdown")
     return {
       icon: "code",
