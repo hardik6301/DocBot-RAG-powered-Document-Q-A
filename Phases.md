@@ -1,171 +1,292 @@
 # DocBot — Build Phases
 
-Build in order. Do not start a phase until the previous phase’s exit criteria are met. Update `Memory.md` after each completed phase (create it when Phase 1 coding starts).
+Build in order. Do not start a phase until the previous phase’s exit criteria are met. Update `Memory.md` after each completed phase (or sub-phase).
+
+**Architectural rule (all phases):** Do not break the existing RAG contract.
+
+```
+Document → ingestion → chunks → embeddings → Pinecone
+→ retrieval → generation → citations
+```
+
+Upgrade pieces of this pipeline. Do not create parallel RAG systems. Voice, Comparison, Intelligence, etc. must reuse the same underlying services.
+
+**Workflow per phase / sub-phase**
+
+1. Read this file → pick the next unchecked item  
+2. Implement only that scope  
+3. Verify exit criteria  
+4. Append progress to `Memory.md`  
+5. Commit + push that slice to GitHub  
 
 ---
 
-## Phase 0 — Project scaffolding
+## Phases 0–7 — COMPLETE (MVP)
 
-**Goal:** Runnable Next.js app with docs, tooling, and env template.
+Shipped on production (`thedocbot.vercel.app`):
 
-**Tasks**
+| Phase | Status | Notes |
+|-------|--------|--------|
+| 0 Scaffolding | Done | Next.js 14, Tailwind, Prisma, Docker, env template |
+| 1 Auth + layout | Done | Supabase Auth, middleware, callback, user upsert |
+| 2 Documents CRUD | Done | Upload/list/delete; Storage + local fallback |
+| 3 Ingestion | Done | Chunk ~500/50 → Gemini embed → Pinecone |
+| 4 Chat Q&A | Done | Top-k retrieve → grounded Gemini → citations + history |
+| 5 Landing + polish | Done | Claymorphic marketing + dashboard UX |
+| 6 Deploy | Done | Vercel + Supabase Postgres + Pinecone |
+| 7 Pro features | Done | Multi-doc, analytics, export, Stripe wired; `BILLING_ENABLED=false` |
 
-- [ ] Initialize Next.js 14 (App Router) + Tailwind
-- [ ] Add shadcn/ui base setup
-- [ ] Create folder skeleton from `Architecture.md`
-- [ ] Add Prisma schema (models only; no migrate yet if DB not ready)
-- [ ] Add `.env.example` (keys listed, empty values)
-- [ ] Add `.gitignore` (include `.env.local`)
-- [ ] Add Dockerfile + docker-compose.yml
-- [ ] Add README with setup steps + architecture summary
-- [ ] Wire `globals.css` with Design.md CSS variables
+---
+
+## Phase 8 — RAG Quality 🔥 (NEXT)
+
+**Goal:** Measure current quality, then improve retrieval and grounding with a before/after baseline.
+
+**Decision after Phase 8**
+
+```
+Re-test baseline
+     │
+Is RAG good enough?
+   /           \
+ YES            NO
+  │              │
+  ▼              ▼
+Phase 9       Phase 12 (targeted)
+```
+
+### 8.1 — Baseline testing
+
+**Before modifying retrieval.**
+
+- [ ] Choose 2–3 real documents  
+- [ ] Create ~15–20 questions  
+- [ ] Record expected answer  
+- [ ] Record expected source/page  
+- [ ] Run current DocBot  
+- [ ] Record actual answer/source  
+- [ ] Mark PASS/FAIL  
+
+No formal eval harness yet — a simple benchmark sheet/file is enough.
 
 **Exit criteria**
 
-- `npm run dev` loads without crash
-- Empty landing route renders with brand tokens
+- Baseline artifact exists (e.g. `evals/baseline-v1.md` or CSV) with questions, expected, actual, PASS/FAIL  
+- Fail patterns noted (wrong chunk, hallucination, off-topic, citation miss)
 
----
+### 8.2 — Contextual chunking
 
-## Phase 1 — Auth + layout shell
+Improve ingestion without destroying citation text:
 
-**Goal:** Users can sign in; protected routes exist.
+```
+Document → extract → chunk
+  → Gemini contextual prefix
+  → enriched chunk
+  → embedding → Pinecone
+```
 
-**Tasks**
-
-- [x] Supabase browser + server clients (`lib/supabase/*`)
-- [x] Auth callback route (`/auth/callback`)
-- [x] Login page: Google + email/password
-- [x] Navbar (logged out / logged in states)
-- [x] Middleware or server checks: `/dashboard` and `/chat/*` require auth
-- [x] On first login: upsert Prisma `User` from Supabase user
-
-**Exit criteria**
-
-- Login → redirect to dashboard
-- Logged-out user cannot access dashboard
-- User row exists in Neon after first successful auth
-
----
-
-## Phase 2 — Documents CRUD + upload UI
-
-**Goal:** List/upload/delete documents (metadata + storage); processing can be stubbed.
-
-**Tasks**
-
-- [ ] Prisma migrate against Neon
-- [ ] `GET /api/documents`
-- [ ] `DELETE /api/documents/[id]` (DB + Storage; Pinecone later if vectors exist)
-- [ ] Dashboard page + DocumentCard + empty state
-- [ ] FileUpload component (PDF/PPT only)
-- [ ] Free-tier banner (e.g. `n/3 documents used`)
-- [ ] `POST /api/upload`: store file in Supabase, create Document with `status: "processing"`
+- [ ] Add contextual prefix generation at ingest  
+- [ ] Store/use `contextualText` for retrieval embeddings  
+- [ ] Keep **original chunk text** for citation/display  
+- [ ] Re-ingest or migrate path documented for existing docs  
 
 **Exit criteria**
 
-- Authenticated user sees their docs only
-- Upload creates Storage object + Document row
-- Delete removes row + file
+- New uploads embed contextual text but cite original chunk text  
+- Baseline can be re-run after re-ingest (or on newly uploaded copies)
 
----
+### 8.3 — Gemini reranking
 
-## Phase 3 — Ingestion pipeline (RAG write path)
+```
+Query → embed → Pinecone top-15
+  → Gemini relevance scoring → top-5
+  → grounded generation
+```
 
-**Goal:** Uploaded docs become searchable vectors.
-
-**Tasks**
-
-- [ ] `lib/langchain.js` — load PDF/PPT, split (500 / 50)
-- [ ] `lib/gemini.js` — embeddings client
-- [ ] `lib/pinecone.js` — upsert with metadata + user namespace
-- [ ] Complete upload route: extract → chunk → embed → upsert → update Document (`chunkCount`, `pageCount`, `status: "ready"` | `"failed"`)
-- [ ] ProcessingStatus UI on dashboard/upload
-
-**Exit criteria**
-
-- Sample PDF reaches `ready` with `chunkCount > 0`
-- Vectors visible in Pinecone for that user’s namespace
-- Failed parse sets `status: "failed"`
-
----
-
-## Phase 4 — Chat Q&A (RAG read path)
-
-**Goal:** Ask questions; get grounded answers + citations.
-
-**Tasks**
-
-- [ ] Chat page `/chat/[docId]` layout (sidebar + thread + input)
-- [ ] `POST /api/chat`: embed query → Pinecone top-5 → Gemini answer → return sources
-- [ ] Persist Chat + Message rows
-- [ ] ChatWindow, ChatInput, SourceCard
-- [ ] Quick prompts
-- [ ] Guard: only owner can chat with doc; doc must be `ready`
+- [ ] Increase Pinecone candidate pool (e.g. 15)  
+- [ ] Gemini scores/reranks candidates  
+- [ ] Pass top-5 into existing grounded generation  
+- [ ] Re-run the same 15–20 baseline questions  
+- [ ] Record before/after PASS rate  
 
 **Exit criteria**
 
-- Question returns answer + ≥1 source when context exists
-- Insufficient context yields honest “not in document” style reply
-- Messages reload on revisit (history from DB)
+- Chat path uses retrieve → rerank → generate  
+- Baseline comparison table updated (v1 vs v2)
 
----
+### 8.4 — Grounding + guardrails
 
-## Phase 5 — Landing page + polish
+DocBot must know when **not** to answer.
 
-**Goal:** Marketing surface + UX hardening.
+Handle:
 
-**Tasks**
+- [ ] Insufficient context  
+- [ ] Irrelevant retrieval  
+- [ ] Off-topic questions  
+- [ ] Unsupported claims / hallucination risk  
+- [ ] Poor source relevance  
+- [ ] Citation mismatch  
 
-- [ ] Landing: hero, demo visual, 3 steps, Free vs Pro cards, CTA
-- [ ] Footer
-- [ ] Loading / error / empty polish across dashboard + chat
-- [ ] Free-tier enforcement on upload API
-- [ ] README final pass (env, local, Docker, deploy)
-
-**Exit criteria**
-
-- Landing matches Design.md (brand-first hero)
-- Happy path: land → sign up → upload → chat → cite → delete works end-to-end
-
----
-
-## Phase 6 — Deploy
-
-**Goal:** Production on Vercel.
-
-**Tasks**
-
-- [ ] Push to `github.com/hardik6301/docbot`
-- [ ] Configure Vercel env vars
-- [ ] Neon + Supabase + Pinecone production projects
-- [ ] Supabase Auth redirect URLs for production
-- [ ] Smoke test on `docbot.vercel.app`
+Example: capital of France + Software Engineer JD → honest “not in the uploaded document.”
 
 **Exit criteria**
 
-- Production URL live; auth + upload + chat verified
+- Off-topic / no-context prompts refuse or say not found (not confident wrong answers)  
+- On-topic baseline questions still pass at least as well as after 8.3  
+
+**Phase 8 done when:** 8.1–8.4 complete + baseline re-tested + go/no-go for Phase 9 vs 12 recorded in `Memory.md`.
 
 ---
 
-## Phase 7 — Pro features (later)
+## Phase 9 — Document Intelligence 🧠
 
-Only after MVP is stable:
+**Goal:** Analysis generated at ingest (when status → `ready`), not on first chat open.
 
-1. [x] Unlimited uploads / `isPro` gating (local demo toggle via `/api/settings`)  
-2. [x] Multi-document Q&A (`/chat/multi`)  
-3. [x] Export chat history as PDF  
-4. [x] Priority processing (Pro badge / label; Stripe later)  
-5. [x] Analytics (top questions, insights)  
-6. [x] Stripe billing (optional Checkout + webhook + portal; demo toggle fallback)
+- [ ] After ready: AI summary  
+- [ ] Key topics  
+- [ ] Suggested questions  
+- [ ] Persist on Document (schema + store)  
+- [ ] UI: AI Overview panel (summary, topics, suggested Qs → fill chat)  
+
+**Exit criteria**
+
+- New ready docs show summary/topics/suggestions without opening a separate analysis action  
+- Suggested question click starts chat with that prompt  
 
 ---
 
-## Suggested session workflow
+## Phase 10 — Document Comparison 🔥
 
-1. Read `Phases.md` → pick current phase  
-2. Read `Rules.md` + `Design.md`  
-3. Skim `Memory.md` (once it exists)  
-4. Implement only that phase’s tasks  
-5. Verify exit criteria  
-6. Append progress to `Memory.md`
+**Goal:** Structured comparison across selected docs — not a naive chunk merge.
+
+- [ ] Multi-document selection UI  
+- [ ] Per-document retrieval for the same question  
+- [ ] Comparison prompt → structured table + key differences  
+- [ ] Comparative citations (which doc supports which cell/claim)  
+
+**Exit criteria**
+
+- User can pick ≥2 docs and get a comparison table + narrative differences  
+- Each major claim ties back to the correct document citation  
+
+---
+
+## Phase 11 — Voice Mode 🎙️
+
+**Goal:** Voice as another input modality into the **existing** `/api/chat` RAG path. No second RAG system.
+
+### 11.1 Voice input
+
+- [ ] Mic control on chat input  
+- [ ] Speech → text  
+- [ ] Feed transcript into existing chat/RAG pipeline  
+
+### 11.2 Voice UX states
+
+- [ ] Listening → Transcribing → Searching document → Generating answer  
+
+### 11.3 Optional voice output
+
+- [ ] Text-to-speech “read aloud” for answers  
+
+### 11.4 Latency analytics
+
+Track (ms): STT, embedding, Pinecone, reranking, generation, total; aggregate P50/P70/P95/max.
+
+- [ ] Instrument timings server and/or client  
+- [ ] Simple display or log for N queries  
+
+**Exit criteria**
+
+- Mic question completes the same RAG path as typed chat  
+- UX states visible; latency numbers recorded for a small sample  
+- No duplicate retrieval stack  
+
+---
+
+## Phase 12 — Retrieval Expansion
+
+**Only if Phase 8 (or later) shows retrieval still weak.** Do not add complexity for marketing labels.
+
+Possible work (pick based on measured gaps):
+
+- [ ] Hybrid search (semantic + BM25/keyword)  
+- [ ] Query rewriting (with chat context)  
+- [ ] Larger candidate pools / chunk-size experiments  
+- [ ] Metadata filtering  
+- [ ] Larger context window experiments  
+- [ ] Advanced reranking if Gemini rerank is insufficient  
+
+**Exit criteria**
+
+- Each experiment has a baseline delta (PASS rate or clear failure-mode fix)  
+- Kept changes documented; discarded experiments noted in `Memory.md`  
+
+---
+
+## Phase 13 — Productivity
+
+- [ ] Folders  
+- [ ] Tags  
+- [ ] Document library search  
+- [ ] Rename  
+- [ ] Archive  
+- [ ] Better chat history  
+- [ ] Search within library  
+
+**Exit criteria**
+
+- User with many docs can organize, find, rename, and archive without leaving the product  
+
+---
+
+## Phase 14 — Scale & Advanced Engineering
+
+### Documents
+
+- [ ] OCR for scanned PDFs  
+- [ ] TXT / Markdown  
+- [ ] DOCX improvements  
+- [ ] EPUB  
+- [ ] Optional URL/webpage ingestion  
+
+### Infrastructure
+
+- [ ] Background processing / job queue  
+- [ ] Retries  
+- [ ] Rate limiting  
+- [ ] Better observability  
+
+### Monetization
+
+- [ ] Enable real Stripe (`BILLING_ENABLED=true`)  
+- [ ] Usage limits / Pro quotas  
+- [ ] Subscription management polish  
+
+### Formal RAG evaluation
+
+- [ ] Golden questions harness  
+- [ ] Retrieval metrics, answer quality, citation correctness, groundedness  
+- [ ] Latency + regression tracking  
+- [ ] Automated evaluation where practical  
+
+### Collaboration
+
+- [ ] Sharing  
+- [ ] Workspaces / teams  
+- [ ] Permissions  
+
+**Exit criteria**
+
+- Defined per sub-epic when started; collaboration last (largest architecture change)  
+
+---
+
+## Locked priority order
+
+```
+NOW → 8.1 → 8.2 → 8.3 → 8.4 → re-test baseline
+        → Phase 9 → 10 → 11 → 12 (if needed) → 13 → 14
+```
+
+Do not jump to Phase 14 while Phase 8 is open.

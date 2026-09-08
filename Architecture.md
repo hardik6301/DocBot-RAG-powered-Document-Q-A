@@ -10,7 +10,7 @@
 | Embeddings | Gemini `embedding-001` | Same API key, 768 dimensions |
 | Vector DB | Pinecone | Semantic search, free tier, namespaces |
 | Document parsing | LangChain | PDF + PPT load + chunk |
-| Database | Neon (PostgreSQL) | Serverless Postgres |
+| Database | Supabase Postgres (Prisma) | Durable users/docs/chats; Session pooler on Vercel |
 | ORM | Prisma | Type-safe queries |
 | File storage | Supabase Storage | Free 1GB |
 | Auth | Supabase Auth | Google OAuth + email/password |
@@ -39,6 +39,10 @@
 ---
 
 ## 3. RAG Pipeline
+
+**Contract (Phases 8+ must preserve):** one pipeline only —
+`Document → ingest → chunks → embeddings → Pinecone → retrieval → generation → citations`.
+Upgrades (contextual chunking, rerank, hybrid, voice, comparison) plug into this flow; they do not fork a second RAG system.
 
 ### 3.1 Ingestion (upload)
 

@@ -1,79 +1,81 @@
 # DocBot — Memory
 
-## 2026-07-16 — Production Docker polish
+## 2026-09-08 — Roadmap lock (Phases 8–14)
 
-### Shipped (uncommitted — user commits)
-- Multi-stage `Dockerfile` (deps → build → runner as `nextjs`)
-- `.dockerignore` (keeps secrets + `.data` out of image)
-- `docker-compose.yml` named volumes + healthcheck (no bind-mount of source)
-- `postinstall` / `build` run `prisma generate`; `docker:up` / `docker:down` scripts
+### Docs
+- `Phases.md` updated: Phases 0–7 marked complete; Phases 8–14 locked with exit criteria
+- Immediate next work: **Phase 8.1 baseline testing** (no code until that artifact exists)
+- Rule: upgrade the single RAG pipeline; no parallel RAG stacks
 
-### Note
-- User has 4 Supabase commits ahead of origin — remind to `git push`
+### Current production reality
+- Live: https://thedocbot.vercel.app
+- Auth: Supabase (`awifaeoqgjnmzlvapesh`)
+- DB: Supabase Postgres + Prisma (`User`, `Document`, `Chat`, `Message`)
+- Vectors: Pinecone; namespace = user `supabaseId`
+- Files: Supabase Storage (`documents`) with local fallback
+- `BILLING_ENABLED = false` (Pro features usable; Stripe dormant)
+- DB failures → **503** (not fake 401) via `requireUserOrResponse`
+- `DATABASE_URL` must be **Session pooler** with URL-encoded password (`@` → `%40`)
+
+### Core RAG contract (do not break)
+```
+Document → ingest → chunks → embed → Pinecone
+→ retrieve → (optional rerank) → generate → citations
+```
+
+### Next slice
+1. Phase 8.1 — baseline questions + PASS/FAIL sheet  
+2. Then 8.2 contextual chunking  
+3. Then 8.3 Gemini rerank + re-test  
+4. Then 8.4 guardrails + re-test  
 
 ---
 
-## 2026-07-16 — Supabase Auth + Storage + Neon durability
+## 2026-08 — Auth / DB production hardening (shipped)
 
-### Shipped (uncommitted — user commits in splits)
+- Fake Unauthorized from Prisma/DB failures → clear 503 + hints (`lib/auth.ts`)
+- `supabase/schema.sql` for SQL Editor / MCP apply
+- Session pooler `DATABASE_URL` verified locally (`SELECT 1`)
+- Marketing hero + claymorphic icons + navbar polish
+- Prior: processing stuck, duplicate cards, chat 404/500 for Pinecone-only ids, PDF DOMMatrix on Vercel, cold-path speedups
+
+---
+
+## 2026-07-16 — Production Docker polish
+
+### Shipped
+- Multi-stage `Dockerfile` (deps → build → runner as `nextjs`)
+- `.dockerignore` (keeps secrets + `.data` out of image)
+- `docker-compose.yml` named volumes + healthcheck
+- `postinstall` / `build` run `prisma generate`; `docker:up` / `docker:down` scripts
+
+---
+
+## 2026-07-16 — Supabase Auth + Storage + durable Postgres
+
+### Shipped
 - Prisma schema: Chat `userId`/`kind`, optional `documentId`, User Stripe fields
-- Dual-mode stores: Neon when `DATABASE_URL`, else `.data` JSON
+- Dual-mode stores: Postgres when `DATABASE_URL`, else `.data` JSON
 - Supabase Storage via service role (`lib/storage/files.ts`, bucket `documents`)
 - Ingest materializes Storage files to temp for parsers
 - Auth: no silent fallback to local user when Supabase fails
 - Middleware protects `/analytics` + `/billing`
-- README setup for Supabase bucket + `prisma db push`
-
-### Still local-by-default
-- Without Supabase/Neon env, app keeps working as before
 
 ---
 
-## 2026-07-16 — Phase 7 Pro features (local demo)
+## 2026-07-16 — Phase 7 Pro features
 
-### Shipped (uncommitted — user commits in splits)
-- `isPro` via `.data/settings.json` + `POST /api/settings` demo toggle
-- Unlimited uploads when Pro; dashboard Upgrade / Switch to Free
-- Multi-doc Q&A: `/api/chat/multi` + `/chat/multi` (Pro-gated)
-- Chat PDF export (`jspdf` + `ExportChatButton`)
-- Analytics: `/api/analytics` + `/analytics` (Pro-gated)
-- Navbar: Multi-doc + Analytics; priority ingest badge on Pro dashboard
-
-### Still deferred
-- Supabase Auth/Storage + durable chat on Vercel
+### Shipped
+- `isPro` via settings + demo toggle
+- Multi-doc Q&A: `/api/chat/multi` + `/chat/multi`
+- Chat PDF export
+- Analytics
+- Stripe Checkout / confirm / webhook / portal (optional; demo fallback)
 
 ---
 
-## 2026-07-16 — Stripe billing
+## 2026-07-16 — Phase 6 deploy
 
-### Shipped (uncommitted — user commits in splits)
-- `stripe` SDK + `lib/stripe.ts`
-- Checkout `/api/stripe/checkout`, confirm `/api/stripe/confirm`, webhook, portal
-- `/billing/success` + `/billing/cancel`
-- Pricing + dashboard wired via `UpgradeButton` / `ManageBillingButton`
-- Demo Pro toggle remains when Stripe env unset
-
-### Follow-up
-- Supabase/Neon adapters shipped in later session (see top of Memory)
-
----
-
-## 2026-07-16 — Phase 6 deploy prep
-
-### Confirmed
-- User pushed 4 Phase 4–5 commits to `origin/main` (clean tree before this work)
-
-### Phase 6 work (uncommitted — tell user to commit in splits)
-- `vercel.json` — 60s for upload/chat
-- Vercel-safe paths (`/tmp` uploads + data)
-- Pinecone document metadata registry for durable doc list on serverless
-- Dashboard `DeployBanner` when `NEXT_PUBLIC_VERCEL_ENV` is set
-- README deploy checklist
-
-### Commit preference
-- Never auto-commit; give user commit msgs + file steps for max contribution splits
-
-### Still deferred
-- Supabase Auth/Storage
-- Neon
-- Live Vercel project creation (user clicks Import)
+- Vercel deploy + env
+- Pinecone meta registry for serverless doc list
+- Dashboard `DeployBanner`
