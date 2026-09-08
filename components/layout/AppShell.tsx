@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import AppSidebar from "@/components/layout/AppSidebar";
 import Navbar from "@/components/layout/Navbar";
 import {
@@ -68,15 +68,13 @@ function ShellInner({
 
   return (
     <div className="min-h-[100dvh] bg-surface">
-      <Suspense fallback={null}>
-        <AppSidebar
-          open={mobileOpen}
-          onClose={() => setMobileOpen(false)}
-          documentCount={docCount}
-          sidebarSearch={sideSearch}
-          onSidebarSearchChange={setSideSearch}
-        />
-      </Suspense>
+      <AppSidebar
+        open={mobileOpen}
+        onClose={() => setMobileOpen(false)}
+        documentCount={docCount}
+        sidebarSearch={sideSearch}
+        onSidebarSearchChange={setSideSearch}
+      />
       <div className="lg:pl-[260px]">
         <Navbar
           variant="app"

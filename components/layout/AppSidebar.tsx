@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import Icon from "@/components/ui/Icon";
 import { useWorkspace } from "@/components/layout/WorkspaceContext";
@@ -76,7 +76,6 @@ export default function AppSidebar({
   onSidebarSearchChange,
 }: Props) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const router = useRouter();
   const {
     label,
@@ -276,20 +275,6 @@ export default function AppSidebar({
                 icon: "compare_arrows",
               }}
               active={isActive("/chat/compare")}
-              onNavigate={navigate}
-            />
-          </Section>
-          <Section title="Organize">
-            <NavLink
-              item={{
-                href: "/dashboard?organize=1",
-                label: "Folders & Tags",
-                icon: "folder",
-              }}
-              active={
-                pathname === "/dashboard" &&
-                searchParams.get("organize") === "1"
-              }
               onNavigate={navigate}
             />
           </Section>
