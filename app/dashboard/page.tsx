@@ -21,7 +21,7 @@ function DashboardMain({
   setQuery: (v: string) => void;
 }) {
   const searchParams = useSearchParams();
-  const { selection, label } = useWorkspace();
+  const { selection } = useWorkspace();
   const {
     documents,
     usage,
@@ -34,9 +34,6 @@ function DashboardMain({
     remove,
     patch,
   } = useDocuments();
-  const [folderFilter, setFolderFilter] = useState<string | "all" | "unfiled">(
-    "all",
-  );
   const [tagFilter, setTagFilter] = useState<string | "all">("all");
   const [showArchived, setShowArchived] = useState(false);
 
@@ -44,14 +41,6 @@ function DashboardMain({
     const q = searchParams.get("q");
     if (q) setQuery(q);
   }, [searchParams, setQuery]);
-
-  useEffect(() => {
-    if (searchParams.get("organize") === "1") {
-      document
-        .getElementById("organize")
-        ?.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [searchParams]);
 
   const unlimited = usage.limit == null;
   const atLimit = usage.limit != null && usage.used >= usage.limit;
@@ -82,30 +71,22 @@ function DashboardMain({
   const filtered = useMemo(() => {
     return scopedDocs.filter((d) => {
       if (showArchived ? !d.archived : d.archived) return false;
-      if (folderFilter === "unfiled" && d.folder) return false;
-      if (
-        folderFilter !== "all" &&
-        folderFilter !== "unfiled" &&
-        d.folder !== folderFilter
-      ) {
-        return false;
-      }
       if (tagFilter !== "all" && !(d.tags ?? []).includes(tagFilter)) {
         return false;
       }
       return documentMatchesQuery(d, query);
     });
-  }, [scopedDocs, query, folderFilter, tagFilter, showArchived]);
+  }, [scopedDocs, query, tagFilter, showArchived]);
 
   return (
     <>
       <main className="px-4 pb-16 pt-8 md:px-8">
         <div className="mx-auto max-w-6xl">
-          <header className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-center">
+          <header className="mb-stack-lg flex flex-col justify-between gap-4 md:flex-row md:items-center">
             <div>
-              <h1 className="text-headline-xl text-on-surface">Documents</h1>
+              <h1 className="text-headline-xl text-on-surface">My Documents</h1>
               <p className="mt-1 text-on-surface-variant">
-                {label} — organize, search, and open chats.
+                Organize, search, and open chats across your library.
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -128,88 +109,37 @@ function DashboardMain({
             </div>
           </header>
 
-          <section
-            id="organize"
-            className="mb-6 rounded-2xl border border-outline-variant bg-white p-4"
-          >
-            <div className="mb-3 flex items-center gap-2">
-              <Icon name="folder" className="text-[18px] text-primary" />
-              <h2 className="text-sm font-semibold text-on-surface">
-                Folders &amp; tags
-              </h2>
-            </div>
-            <div className="flex flex-wrap gap-2">
+          {tags.length > 0 && (
+            <div className="mb-4 flex flex-wrap gap-2">
               <button
                 type="button"
-                onClick={() => setFolderFilter("all")}
-                className={`rounded-full px-3 py-1.5 text-[12px] ${
-                  folderFilter === "all"
+                onClick={() => setTagFilter("all")}
+                className={`rounded-full px-3 py-1 text-[12px] ${
+                  tagFilter === "all"
                     ? "bg-primary text-on-primary"
                     : "bg-surface-container text-on-surface-variant"
                 }`}
               >
-                All folders
+                All tags
               </button>
-              <button
-                type="button"
-                onClick={() => setFolderFilter("unfiled")}
-                className={`rounded-full px-3 py-1.5 text-[12px] ${
-                  folderFilter === "unfiled"
-                    ? "bg-primary text-on-primary"
-                    : "bg-surface-container text-on-surface-variant"
-                }`}
-              >
-                Unfiled
-              </button>
-              {folders.map((f) => (
+              {tags.map((t) => (
                 <button
-                  key={f}
+                  key={t}
                   type="button"
                   onClick={() =>
-                    setFolderFilter((cur) => (cur === f ? "all" : f))
+                    setTagFilter((cur) => (cur === t ? "all" : t))
                   }
-                  className={`rounded-full px-3 py-1.5 text-[12px] ${
-                    folderFilter === f
+                  className={`rounded-full px-3 py-1 text-[12px] ${
+                    tagFilter === t
                       ? "bg-primary text-on-primary"
                       : "bg-surface-container text-on-surface-variant"
                   }`}
                 >
-                  {f}
+                  #{t}
                 </button>
               ))}
             </div>
-            {tags.length > 0 && (
-              <div className="mt-3 flex flex-wrap gap-2 border-t border-outline-variant pt-3">
-                <button
-                  type="button"
-                  onClick={() => setTagFilter("all")}
-                  className={`rounded-full px-3 py-1 text-[12px] ${
-                    tagFilter === "all"
-                      ? "bg-primary text-on-primary"
-                      : "bg-surface-container text-on-surface-variant"
-                  }`}
-                >
-                  All tags
-                </button>
-                {tags.map((t) => (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() =>
-                      setTagFilter((cur) => (cur === t ? "all" : t))
-                    }
-                    className={`rounded-full px-3 py-1 text-[12px] ${
-                      tagFilter === t
-                        ? "bg-primary text-on-primary"
-                        : "bg-surface-container text-on-surface-variant"
-                    }`}
-                  >
-                    #{t}
-                  </button>
-                ))}
-              </div>
-            )}
-          </section>
+          )}
 
           {atLimit && (
             <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-body-sm text-amber-900">
@@ -224,7 +154,7 @@ function DashboardMain({
             </div>
           )}
 
-          <section className="mb-8 space-y-3">
+          <section className="mb-stack-lg space-y-3">
             {uploading && (
               <ProcessingStatus
                 status="uploading"
@@ -266,10 +196,11 @@ function DashboardMain({
                 className="mb-3 text-[40px] text-outline-variant"
               />
               <h2 className="text-headline-lg text-on-surface">
-                No documents in {label}
+                Upload your first document to get started
               </h2>
               <p className="mt-2 text-body-md text-on-surface-variant">
-                Upload a PDF, PPT, DOC, TXT, Markdown, EPUB, or webpage URL.
+                PDF, PPT, DOC, TXT, Markdown, EPUB, or a webpage URL — then ask
+                with citations.
               </p>
             </div>
           ) : filtered.length === 0 ? (
@@ -306,6 +237,17 @@ function DashboardMain({
                   }}
                 />
               ))}
+              {!atLimit && !query.trim() && !showArchived && (
+                <div className="hidden h-72 flex-col items-center justify-center rounded-xl border-2 border-dashed border-outline-variant bg-surface-container-low text-center xl:flex">
+                  <Icon
+                    name="add_circle"
+                    className="mb-2 text-[48px] text-outline-variant"
+                  />
+                  <p className="font-mono text-label-caps text-outline">
+                    NEW DOCUMENT
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </div>
