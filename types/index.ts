@@ -24,7 +24,24 @@ export type AppDocument = {
   summary: string | null;
   keyTopics: string[] | null;
   suggestedQuestions: string[] | null;
+  /** Phase 13 — library organization */
+  folder: string | null;
+  tags: string[] | null;
+  archived: boolean;
+  archivedAt: string | null;
   createdAt: string;
+  updatedAt: string;
+};
+
+/** Phase 13 — chat history browser row */
+export type ChatSummary = {
+  id: string;
+  kind: "document" | "multi";
+  documentId: string | null;
+  documentFilename: string | null;
+  title: string | null;
+  preview: string | null;
+  messageCount: number;
   updatedAt: string;
 };
 
@@ -46,6 +63,7 @@ export type StoredChat = {
   id: string;
   documentId: string;
   userId: string;
+  title?: string | null;
   messages: StoredMessage[];
   createdAt: string;
   updatedAt: string;

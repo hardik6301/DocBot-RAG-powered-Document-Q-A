@@ -228,17 +228,17 @@ Possible work (pick based on measured gaps):
 
 ## Phase 13 — Productivity
 
-- [ ] Folders  
-- [ ] Tags  
-- [ ] Document library search  
-- [ ] Rename  
-- [ ] Archive  
-- [ ] Better chat history  
-- [ ] Search within library  
+- [x] Folders  
+- [x] Tags  
+- [x] Document library search  
+- [x] Rename  
+- [x] Archive  
+- [x] Better chat history  
+- [x] Search within library  
 
 **Exit criteria**
 
-- User with many docs can organize, find, rename, and archive without leaving the product  
+- [x] User with many docs can organize, find, rename, and archive without leaving the product  
 
 ---
 

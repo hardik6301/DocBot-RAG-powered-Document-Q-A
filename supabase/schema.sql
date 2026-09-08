@@ -86,3 +86,26 @@ DO $$ BEGIN
   ALTER TABLE "Document" ADD COLUMN "suggestedQuestions" JSONB;
 EXCEPTION WHEN duplicate_column THEN NULL; END $$;
 
+DO $$ BEGIN
+  ALTER TABLE "Document" ADD COLUMN "folder" TEXT;
+EXCEPTION WHEN duplicate_column THEN NULL; END $$;
+
+DO $$ BEGIN
+  ALTER TABLE "Document" ADD COLUMN "tags" JSONB;
+EXCEPTION WHEN duplicate_column THEN NULL; END $$;
+
+DO $$ BEGIN
+  ALTER TABLE "Document" ADD COLUMN "archived" BOOLEAN NOT NULL DEFAULT false;
+EXCEPTION WHEN duplicate_column THEN NULL; END $$;
+
+DO $$ BEGIN
+  ALTER TABLE "Document" ADD COLUMN "archivedAt" TIMESTAMP(3);
+EXCEPTION WHEN duplicate_column THEN NULL; END $$;
+
+DO $$ BEGIN
+  ALTER TABLE "Chat" ADD COLUMN "title" TEXT;
+EXCEPTION WHEN duplicate_column THEN NULL; END $$;
+
+CREATE INDEX IF NOT EXISTS "Document_userId_archived_idx" ON "Document"("userId", "archived");
+CREATE INDEX IF NOT EXISTS "Document_userId_folder_idx" ON "Document"("userId", "folder");
+

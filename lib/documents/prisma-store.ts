@@ -1,11 +1,23 @@
 import type { AppDocument } from "@/types";
 import prisma from "@/lib/prisma";
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 
 function asStringArray(v: unknown): string[] | null {
   if (v == null) return null;
   if (!Array.isArray(v)) return null;
   return v.map((x) => String(x)).filter(Boolean);
+}
+
+function normalizeTags(tags: string[] | null | undefined): string[] | null {
+  if (tags == null) return null;
+  const cleaned = Array.from(
+    new Set(
+      tags
+        .map((t) => t.trim().toLowerCase())
+        .filter((t) => t.length > 0 && t.length <= 40),
+    ),
+  ).slice(0, 12);
+  return cleaned.length ? cleaned : [];
 }
 
 function toApp(doc: {
@@ -22,6 +34,10 @@ function toApp(doc: {
   summary?: string | null;
   keyTopics?: unknown;
   suggestedQuestions?: unknown;
+  folder?: string | null;
+  tags?: unknown;
+  archived?: boolean;
+  archivedAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }): AppDocument {
@@ -39,6 +55,10 @@ function toApp(doc: {
     summary: doc.summary ?? null,
     keyTopics: asStringArray(doc.keyTopics),
     suggestedQuestions: asStringArray(doc.suggestedQuestions),
+    folder: doc.folder?.trim() || null,
+    tags: asStringArray(doc.tags) ?? [],
+    archived: Boolean(doc.archived),
+    archivedAt: doc.archivedAt ? doc.archivedAt.toISOString() : null,
     createdAt: doc.createdAt.toISOString(),
     updatedAt: doc.updatedAt.toISOString(),
   };
@@ -117,12 +137,16 @@ export async function dbCreateDocument(
       summary: input.summary,
       keyTopics: input.keyTopics ?? undefined,
       suggestedQuestions: input.suggestedQuestions ?? undefined,
+      folder: input.folder?.trim() || null,
+      tags: normalizeTags(input.tags) ?? [],
+      archived: input.archived ?? false,
+      archivedAt: input.archivedAt ? new Date(input.archivedAt) : null,
     },
   });
   return toApp(row);
 }
 
-const UPDATE_KEYS = [
+export const DOCUMENT_UPDATE_KEYS = [
   "status",
   "pageCount",
   "chunkCount",
@@ -132,21 +156,64 @@ const UPDATE_KEYS = [
   "summary",
   "keyTopics",
   "suggestedQuestions",
+  "folder",
+  "tags",
+  "archived",
+  "archivedAt",
 ] as const;
+
+export type DocumentUpdatePatch = Partial<
+  Pick<AppDocument, (typeof DOCUMENT_UPDATE_KEYS)[number]>
+>;
 
 export async function dbUpdateDocument(
   id: string,
   userId: string,
-  patch: Partial<Pick<AppDocument, (typeof UPDATE_KEYS)[number]>>,
+  patch: DocumentUpdatePatch,
 ): Promise<AppDocument | null> {
   const existing = await dbGetDocument(id, userId);
   if (!existing) return null;
+
   const data: Prisma.DocumentUpdateInput = {};
-  for (const key of UPDATE_KEYS) {
-    if (patch[key] !== undefined) {
-      (data as Record<string, unknown>)[key] = patch[key];
-    }
+
+  if (patch.status !== undefined) data.status = patch.status;
+  if (patch.pageCount !== undefined) data.pageCount = patch.pageCount;
+  if (patch.chunkCount !== undefined) data.chunkCount = patch.chunkCount;
+  if (patch.filename !== undefined) data.filename = patch.filename.trim();
+  if (patch.fileUrl !== undefined) data.fileUrl = patch.fileUrl;
+  if (patch.fileSize !== undefined) data.fileSize = patch.fileSize;
+  if (patch.summary !== undefined) data.summary = patch.summary;
+  if (patch.keyTopics !== undefined) {
+    data.keyTopics =
+      patch.keyTopics === null
+        ? Prisma.DbNull
+        : (patch.keyTopics as Prisma.InputJsonValue);
   }
+  if (patch.suggestedQuestions !== undefined) {
+    data.suggestedQuestions =
+      patch.suggestedQuestions === null
+        ? Prisma.DbNull
+        : (patch.suggestedQuestions as Prisma.InputJsonValue);
+  }
+  if (patch.folder !== undefined) {
+    data.folder = patch.folder?.trim() || null;
+  }
+  if (patch.tags !== undefined) {
+    const tags = normalizeTags(patch.tags);
+    data.tags =
+      tags === null ? Prisma.DbNull : (tags as Prisma.InputJsonValue);
+  }
+  if (patch.archived !== undefined) {
+    data.archived = patch.archived;
+    data.archivedAt = patch.archived
+      ? patch.archivedAt
+        ? new Date(patch.archivedAt)
+        : new Date()
+      : null;
+  } else if (patch.archivedAt !== undefined) {
+    data.archivedAt = patch.archivedAt ? new Date(patch.archivedAt) : null;
+  }
+
   const row = await prisma.document.update({
     where: { id },
     data,
@@ -199,6 +266,10 @@ export async function ensureDocumentPersisted(
         summary: doc.summary,
         keyTopics: doc.keyTopics ?? undefined,
         suggestedQuestions: doc.suggestedQuestions ?? undefined,
+        folder: doc.folder?.trim() || null,
+        tags: normalizeTags(doc.tags) ?? [],
+        archived: doc.archived ?? false,
+        archivedAt: doc.archivedAt ? new Date(doc.archivedAt) : null,
         createdAt: new Date(doc.createdAt),
         updatedAt: new Date(doc.updatedAt),
       },

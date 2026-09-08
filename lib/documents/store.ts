@@ -143,7 +143,16 @@ export async function listDocuments(userId: string): Promise<AppDocument[]> {
     }
   }
 
-  return dedupeDocuments(Array.from(byId.values()));
+  return dedupeDocuments(Array.from(byId.values())).map((d) => ({
+    ...d,
+    folder: d.folder ?? null,
+    tags: d.tags ?? [],
+    archived: Boolean(d.archived),
+    archivedAt: d.archivedAt ?? null,
+    summary: d.summary ?? null,
+    keyTopics: d.keyTopics ?? null,
+    suggestedQuestions: d.suggestedQuestions ?? null,
+  }));
 }
 
 export async function getDocument(
@@ -200,6 +209,10 @@ export async function createDocument(
     summary: input.summary ?? null,
     keyTopics: input.keyTopics ?? null,
     suggestedQuestions: input.suggestedQuestions ?? null,
+    folder: input.folder?.trim() || null,
+    tags: input.tags ?? [],
+    archived: input.archived ?? false,
+    archivedAt: input.archivedAt ?? null,
     id: randomUUID(),
     createdAt: now,
     updatedAt: now,
@@ -234,6 +247,10 @@ export async function updateDocument(
       | "summary"
       | "keyTopics"
       | "suggestedQuestions"
+      | "folder"
+      | "tags"
+      | "archived"
+      | "archivedAt"
     >
   >,
 ): Promise<AppDocument | null> {
@@ -255,13 +272,28 @@ export async function updateDocument(
       (d) => d.id === id && d.userId === userId,
     );
     if (idx !== -1) {
+      const prev = store.documents[idx]!;
+      const nextArchived =
+        patch.archived !== undefined ? patch.archived : prev.archived;
       store.documents[idx] = {
-        ...store.documents[idx],
+        ...prev,
         ...patch,
+        folder:
+          patch.folder !== undefined
+            ? patch.folder?.trim() || null
+            : prev.folder,
+        tags: patch.tags !== undefined ? patch.tags : prev.tags,
+        archived: nextArchived,
+        archivedAt:
+          patch.archived !== undefined
+            ? patch.archived
+              ? patch.archivedAt ?? new Date().toISOString()
+              : null
+            : (patch.archivedAt ?? prev.archivedAt),
         updatedAt: new Date().toISOString(),
       };
       await writeStore(store);
-      updated = store.documents[idx];
+      updated = store.documents[idx]!;
     }
   }
 
@@ -269,9 +301,22 @@ export async function updateDocument(
     try {
       const existing = await pineconeGetFromAnyNs(id, userId);
       if (existing) {
+        const nextArchived =
+          patch.archived !== undefined ? patch.archived : existing.archived;
         updated = {
           ...existing,
           ...patch,
+          folder:
+            patch.folder !== undefined
+              ? patch.folder?.trim() || null
+              : existing.folder,
+          archived: nextArchived,
+          archivedAt:
+            patch.archived !== undefined
+              ? patch.archived
+                ? patch.archivedAt ?? new Date().toISOString()
+                : null
+              : (patch.archivedAt ?? existing.archivedAt),
           updatedAt: new Date().toISOString(),
         };
       }

@@ -5,6 +5,13 @@ import type { AppDocument } from "@/types";
 
 type Usage = { used: number; limit: number | null };
 
+export type DocumentPatch = {
+  filename?: string;
+  folder?: string | null;
+  tags?: string[] | null;
+  archived?: boolean;
+};
+
 export function useDocuments() {
   const [documents, setDocuments] = useState<AppDocument[]>([]);
   const [usage, setUsage] = useState<Usage>({ used: 0, limit: null });
@@ -82,6 +89,29 @@ export function useDocuments() {
     [refresh],
   );
 
+  const patch = useCallback(
+    async (id: string, body: DocumentPatch) => {
+      setError(null);
+      const res = await fetch(`/api/documents/${id}`, {
+        method: "PATCH",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Update failed");
+        throw new Error(data.error || "Update failed");
+      }
+      const updated = data.document as AppDocument;
+      setDocuments((prev) =>
+        prev.map((d) => (d.id === updated.id ? updated : d)),
+      );
+      return updated;
+    },
+    [],
+  );
+
   const setPro = useCallback(
     async (enabled: boolean) => {
       setError(null);
@@ -110,6 +140,7 @@ export function useDocuments() {
     refresh,
     upload,
     remove,
+    patch,
     setPro,
   };
 }

@@ -36,6 +36,12 @@ function toDoc(id: string, metadata: Record<string, unknown>): AppDocument {
     suggestedQuestions: Array.isArray(metadata.suggestedQuestions)
       ? metadata.suggestedQuestions.map((x) => String(x))
       : null,
+    folder: metadata.folder ? String(metadata.folder) : null,
+    tags: Array.isArray(metadata.tags)
+      ? metadata.tags.map((x) => String(x))
+      : [],
+    archived: Boolean(metadata.archived),
+    archivedAt: metadata.archivedAt ? String(metadata.archivedAt) : null,
     createdAt: String(metadata.createdAt || new Date().toISOString()),
     updatedAt: String(metadata.updatedAt || new Date().toISOString()),
   };
@@ -113,6 +119,10 @@ export async function pineconeUpsertDocument(doc: AppDocument) {
           chunkCount: doc.chunkCount ?? 0,
           pineconeNs: doc.pineconeNs,
           status: doc.status,
+          folder: doc.folder ?? "",
+          tags: doc.tags ?? [],
+          archived: doc.archived ?? false,
+          archivedAt: doc.archivedAt ?? "",
           createdAt: doc.createdAt,
           updatedAt: doc.updatedAt,
         },

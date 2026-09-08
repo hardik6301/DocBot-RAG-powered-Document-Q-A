@@ -12,10 +12,12 @@ type NavbarProps = {
   /** Controlled search for dashboard (optional). */
   searchQuery?: string;
   onSearchChange?: (value: string) => void;
+  searchPlaceholder?: string;
 };
 
 const appLinks = [
   { href: "/dashboard", label: "Dashboard" },
+  { href: "/history", label: "History" },
   { href: "/chat/multi", label: "Multi-doc" },
   { href: "/chat/compare", label: "Compare" },
   { href: "/analytics", label: "Analytics" },
@@ -30,6 +32,7 @@ export default function Navbar({
   variant = "marketing",
   searchQuery,
   onSearchChange,
+  searchPlaceholder = "Search documents...",
 }: NavbarProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -174,7 +177,7 @@ export default function Navbar({
             type="search"
             value={searchQuery ?? ""}
             onChange={(e) => onSearchChange?.(e.target.value)}
-            placeholder="Search documents..."
+            placeholder={searchPlaceholder}
             className="w-56 rounded-lg border border-outline-variant bg-surface-container-low py-2 pl-10 pr-4 text-body-sm outline-none transition-all focus:border-transparent focus:ring-2 focus:ring-primary md:w-64"
           />
         </div>

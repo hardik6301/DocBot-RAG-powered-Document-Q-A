@@ -25,6 +25,7 @@ function mapChat(chat: {
   userId: string;
   documentId: string | null;
   kind: string;
+  title?: string | null;
   createdAt: Date;
   updatedAt: Date;
   messages: {
@@ -40,6 +41,7 @@ function mapChat(chat: {
     documentId:
       chat.kind === "multi" ? MULTI_DOC_CHAT_ID : (chat.documentId ?? ""),
     userId: chat.userId,
+    title: chat.title ?? null,
     messages: chat.messages.map(mapMessage),
     createdAt: chat.createdAt.toISOString(),
     updatedAt: chat.updatedAt.toISOString(),
@@ -131,9 +133,21 @@ export async function dbAppendMessages(
       }),
     ),
   );
+
+  const firstUser = messages.find((m) => m.role === "user")?.content?.trim();
+  const titleUpdate =
+    !chat.title && firstUser
+      ? firstUser.length > 80
+        ? `${firstUser.slice(0, 77)}…`
+        : firstUser
+      : undefined;
+
   await prisma.chat.update({
     where: { id: chat.id },
-    data: { updatedAt: new Date() },
+    data: {
+      updatedAt: new Date(),
+      ...(titleUpdate ? { title: titleUpdate } : {}),
+    },
   });
   return created.map(mapMessage);
 }
@@ -152,4 +166,62 @@ export async function dbListChatsForUser(userId: string): Promise<StoredChat[]> 
     orderBy: { updatedAt: "desc" },
   });
   return rows.map(mapChat);
+}
+
+export async function dbListChatSummaries(userId: string) {
+  const ownerId = (await resolveOwnerId(userId)) ?? userId;
+  const rows = await prisma.chat.findMany({
+    where: { userId: ownerId },
+    include: {
+      document: { select: { filename: true } },
+      messages: {
+        orderBy: { createdAt: "desc" },
+        take: 1,
+        select: { content: true, role: true },
+      },
+      _count: { select: { messages: true } },
+    },
+    orderBy: { updatedAt: "desc" },
+    take: 50,
+  });
+
+  return rows
+    .filter((c) => c._count.messages > 0)
+    .map((c) => {
+      const last = c.messages[0];
+      const preview = last?.content
+        ? last.content.length > 120
+          ? `${last.content.slice(0, 117)}…`
+          : last.content
+        : null;
+      return {
+        id: c.id,
+        kind: (c.kind === "multi" ? "multi" : "document") as
+          | "document"
+          | "multi",
+        documentId: c.documentId,
+        documentFilename: c.document?.filename ?? null,
+        title: c.title,
+        preview,
+        messageCount: c._count.messages,
+        updatedAt: c.updatedAt.toISOString(),
+      };
+    });
+}
+
+export async function dbUpdateChatTitle(
+  chatId: string,
+  userId: string,
+  title: string,
+) {
+  const ownerId = (await resolveOwnerId(userId)) ?? userId;
+  const existing = await prisma.chat.findFirst({
+    where: { id: chatId, userId: ownerId },
+  });
+  if (!existing) return null;
+  const row = await prisma.chat.update({
+    where: { id: chatId },
+    data: { title: title.trim().slice(0, 120) },
+  });
+  return row;
 }

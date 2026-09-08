@@ -9,9 +9,12 @@ import {
   dbAppendMessages,
   dbDeleteChatsForDocument,
   dbGetOrCreateChat,
+  dbListChatSummaries,
   dbListChatsForUser,
   dbListMessages,
+  dbUpdateChatTitle,
 } from "@/lib/chat/prisma-store";
+import type { ChatSummary } from "@/types";
 
 export { MULTI_DOC_CHAT_ID };
 
@@ -55,6 +58,7 @@ export async function getOrCreateChat(
     id: randomUUID(),
     documentId,
     userId,
+    title: null,
     messages: [],
     createdAt: now,
     updatedAt: now,
@@ -91,6 +95,7 @@ export async function appendMessages(
       id: randomUUID(),
       documentId,
       userId,
+      title: null,
       messages: [],
       createdAt: now,
       updatedAt: now,
@@ -106,6 +111,13 @@ export async function appendMessages(
 
   chat.messages.push(...created);
   chat.updatedAt = new Date().toISOString();
+  if (!chat.title) {
+    const firstUser = messages.find((m) => m.role === "user")?.content?.trim();
+    if (firstUser) {
+      chat.title =
+        firstUser.length > 80 ? `${firstUser.slice(0, 77)}…` : firstUser;
+    }
+  }
   await writeStore(store);
   return created;
 }
@@ -124,6 +136,58 @@ export async function listChatsForUser(userId: string): Promise<StoredChat[]> {
   if (useDurableDb()) return dbListChatsForUser(userId);
   const store = await ensureStore();
   return store.chats.filter((c) => c.userId === userId);
+}
+
+export async function listChatSummaries(
+  userId: string,
+): Promise<ChatSummary[]> {
+  if (useDurableDb()) return dbListChatSummaries(userId);
+
+  const store = await ensureStore();
+  return store.chats
+    .filter((c) => c.userId === userId && c.messages.length > 0)
+    .sort(
+      (a, b) =>
+        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+    )
+    .slice(0, 50)
+    .map((c) => {
+      const last = c.messages[c.messages.length - 1];
+      const preview = last?.content
+        ? last.content.length > 120
+          ? `${last.content.slice(0, 117)}…`
+          : last.content
+        : null;
+      return {
+        id: c.id,
+        kind:
+          c.documentId === MULTI_DOC_CHAT_ID
+            ? ("multi" as const)
+            : ("document" as const),
+        documentId:
+          c.documentId === MULTI_DOC_CHAT_ID ? null : c.documentId || null,
+        documentFilename: null,
+        title: c.title ?? null,
+        preview,
+        messageCount: c.messages.length,
+        updatedAt: c.updatedAt,
+      };
+    });
+}
+
+export async function updateChatTitle(
+  chatId: string,
+  userId: string,
+  title: string,
+) {
+  if (useDurableDb()) return dbUpdateChatTitle(chatId, userId, title);
+  const store = await ensureStore();
+  const chat = store.chats.find((c) => c.id === chatId && c.userId === userId);
+  if (!chat) return null;
+  chat.title = title.trim().slice(0, 120);
+  chat.updatedAt = new Date().toISOString();
+  await writeStore(store);
+  return chat;
 }
 
 export type { SourceCitation };

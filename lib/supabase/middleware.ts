@@ -50,6 +50,7 @@ export async function updateSession(request: NextRequest) {
   const isProtected =
     path.startsWith("/dashboard") ||
     path.startsWith("/chat") ||
+    path.startsWith("/history") ||
     path.startsWith("/analytics") ||
     path.startsWith("/billing");
   const isAuthPage = path.startsWith("/auth/login");

@@ -79,6 +79,10 @@ export async function POST(request: Request) {
       summary: null,
       keyTopics: null,
       suggestedQuestions: null,
+      folder: null,
+      tags: [],
+      archived: false,
+      archivedAt: null,
     });
     docId = doc.id;
 
@@ -105,9 +109,23 @@ export async function POST(request: Request) {
     if (!ready && useDurableDb()) {
       try {
         const prisma = (await import("@/lib/prisma")).default;
+        const { Prisma } = await import("@prisma/client");
         const row = await prisma.document.update({
           where: { id: doc.id },
-          data: patch,
+          data: {
+            status: patch.status,
+            pageCount: patch.pageCount,
+            chunkCount: patch.chunkCount,
+            summary: patch.summary,
+            keyTopics:
+              patch.keyTopics === null
+                ? Prisma.DbNull
+                : patch.keyTopics ?? undefined,
+            suggestedQuestions:
+              patch.suggestedQuestions === null
+                ? Prisma.DbNull
+                : patch.suggestedQuestions ?? undefined,
+          },
         });
         ready = {
           ...doc,
@@ -121,6 +139,10 @@ export async function POST(request: Request) {
           suggestedQuestions: Array.isArray(row.suggestedQuestions)
             ? (row.suggestedQuestions as string[])
             : null,
+          folder: row.folder ?? null,
+          tags: Array.isArray(row.tags) ? (row.tags as string[]) : [],
+          archived: Boolean(row.archived),
+          archivedAt: row.archivedAt ? row.archivedAt.toISOString() : null,
           updatedAt: row.updatedAt.toISOString(),
         };
       } catch (e) {
