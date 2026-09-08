@@ -42,7 +42,8 @@ const EMBED_MODEL = "gemini-embedding-001";
 const EMBED_DIM = 768;
 const CHUNK_SIZE = 2000;
 const CHUNK_OVERLAP = 200;
-const NS = "eval-baseline-v1";
+const CONTEXTUAL = process.env.CONTEXTUAL === "1";
+const NS = CONTEXTUAL ? "eval-baseline-v2-contextual" : "eval-baseline-v1";
 const TOP_K = 5;
 const SCORE_MIN = 0.15;
 
@@ -403,6 +404,47 @@ async function querySimilar(index, vector, docId) {
   }));
 }
 
+async function buildContextualPrefix(filename, preview, chunk) {
+  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY.trim());
+  const prompt = `You are indexing a document for search.
+Document filename: ${filename}
+Document preview:
+"""
+${preview.slice(0, 6000)}
+"""
+
+Chunk (page ${chunk.page}):
+"""
+${chunk.text.slice(0, 2500)}
+"""
+
+Write ONE short paragraph (2 sentences max) that situates this chunk within the document so it can be retrieved independently.
+Include the document type/topic and what this chunk is about.
+Do NOT repeat the chunk verbatim. Answer with only the situating context.`;
+  const models = [
+    "gemini-flash-latest",
+    "gemini-2.0-flash",
+    "gemini-flash-lite-latest",
+  ];
+  for (const modelName of models) {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const model = genAI.getGenerativeModel({ model: modelName });
+        const result = await model.generateContent(prompt);
+        return result.response.text().trim().replace(/\s+/g, " ").slice(0, 500);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        if (/429|503|high demand|quota/i.test(msg) && attempt < 2) {
+          await sleep(1500 * (attempt + 1));
+          continue;
+        }
+        break;
+      }
+    }
+  }
+  return "";
+}
+
 async function generateGroundedAnswer(question, contextBlocks) {
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY.trim());
   const context = contextBlocks
@@ -522,8 +564,18 @@ async function main() {
     console.log("Ingesting", doc.file);
     const pages = await loadPdf(abs);
     const chunks = splitPages(pages);
-    console.log(`  pages=${pages.length} chunks=${chunks.length}`);
-    const vectors = await embedTexts(chunks.map((c) => c.text));
+    console.log(`  pages=${pages.length} chunks=${chunks.length} contextual=${CONTEXTUAL}`);
+    const preview = pages.map((p) => `Page ${p.page}: ${p.text}`).join("\n\n");
+    let embedInputs = chunks.map((c) => c.text);
+    if (CONTEXTUAL) {
+      embedInputs = [];
+      for (const c of chunks) {
+        const prefix = await buildContextualPrefix(doc.filename, preview, c);
+        embedInputs.push(prefix ? `${prefix}\n\n${c.text}` : c.text);
+        await sleep(200);
+      }
+    }
+    const vectors = await embedTexts(embedInputs);
     const records = chunks.map((c, i) => ({
       id: `${doc.id}-${c.index}-${randomUUID().slice(0, 8)}`,
       values: vectors[i],
@@ -655,10 +707,11 @@ ${table(byDoc.C)}
 `;
 
   mkdirSync(join(__dirname, "results"), { recursive: true });
-  const outPath = join(__dirname, "results", "baseline-v1-filled.md");
+  const outName = CONTEXTUAL ? "baseline-v2-contextual-filled.md" : "baseline-v1-filled.md";
+  const outPath = join(__dirname, "results", outName);
   writeFileSync(outPath, md);
   writeFileSync(
-    join(__dirname, "results", "baseline-v1-raw.json"),
+    join(__dirname, "results", CONTEXTUAL ? "baseline-v2-contextual-raw.json" : "baseline-v1-raw.json"),
     JSON.stringify({ pass, partial, fail, rows }, null, 2),
   );
   console.log("\nWrote", outPath);

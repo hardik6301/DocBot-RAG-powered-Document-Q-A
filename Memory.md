@@ -24,10 +24,16 @@ Document → ingest → chunks → embed → Pinecone
 ```
 
 ### Next slice
-1. ~~Phase 8.1~~ **DONE** — PASS rate **81.8%** (18/22 PASS, 4 PARTIAL); see `evals/results/baseline-v1-filled.md`  
-2. **Phase 8.2** contextual chunking (next)  
-3. Then 8.3 Gemini rerank + re-test  
+1. ~~Phase 8.1~~ **DONE** — 81.8% PASS  
+2. ~~Phase 8.2~~ **DONE** — contextual chunking on ingest (`lib/contextualize.ts` + `lib/ingest.ts`)  
+3. **Phase 8.3** Gemini rerank + re-test (next)  
 4. Then 8.4 guardrails + re-test  
+
+### 2026-09-08 — Phase 8.2 complete
+- Ingest: Gemini situating prefix → embed `prefix + original`; Pinecone metadata still original `chunkText`
+- Chat unchanged (still cites `chunkText`)
+- Re-eval: `CONTEXTUAL=1 node evals/run-baseline.mjs` → `evals/results/baseline-v2-contextual-filled.md`
+- Existing user docs need **re-upload** to get contextual vectors
 
 ### 2026-09-08 — Phase 8.1 complete
 - Runner: `evals/run-baseline.mjs` (mirrors `/api/chat` retrieve→generate)

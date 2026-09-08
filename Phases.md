@@ -83,15 +83,15 @@ Document → extract → chunk
   → embedding → Pinecone
 ```
 
-- [ ] Add contextual prefix generation at ingest  
-- [ ] Store/use `contextualText` for retrieval embeddings  
-- [ ] Keep **original chunk text** for citation/display  
-- [ ] Re-ingest or migrate path documented for existing docs  
+- [x] Add contextual prefix generation at ingest (`lib/contextualize.ts`)  
+- [x] Store/use `contextualText` for retrieval embeddings  
+- [x] Keep **original chunk text** for citation/display (`chunkText` metadata)  
+- [x] Re-ingest path documented (re-upload; `CONTEXTUAL=1 node evals/run-baseline.mjs` for eval)  
 
 **Exit criteria**
 
-- New uploads embed contextual text but cite original chunk text  
-- Baseline can be re-run after re-ingest (or on newly uploaded copies)
+- [x] New uploads embed contextual text but cite original chunk text  
+- [x] Baseline can be re-run after re-ingest (`CONTEXTUAL=1`)
 
 ### 8.3 — Gemini reranking
 

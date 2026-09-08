@@ -7,6 +7,10 @@ import {
 } from "@/lib/pinecone";
 import { loadDocumentFile, splitPages } from "@/lib/langchain";
 import { materializeForIngest } from "@/lib/storage/files";
+import {
+  buildContextualTexts,
+  documentPreviewFromPages,
+} from "@/lib/contextualize";
 
 export type IngestResult = {
   pageCount: number;
@@ -14,8 +18,11 @@ export type IngestResult = {
 };
 
 /**
- * Load → chunk → embed → Pinecone upsert.
+ * Load → chunk → contextual prefix → embed(contextual) → Pinecone upsert.
  * Namespace = userId so users only search their own docs.
+ *
+ * Pinecone metadata keeps **original** chunkText for citations/display.
+ * Embeddings use contextualText (prefix + original) for better retrieval.
  */
 export async function ingestDocument(opts: {
   userId: string;
@@ -40,7 +47,14 @@ export async function ingestDocument(opts: {
       throw new Error("Document produced zero text chunks");
     }
 
-    const vectors = await embedTexts(chunks.map((c) => c.text));
+    const preview = documentPreviewFromPages(pages);
+    const contextualTexts = await buildContextualTexts({
+      filename: opts.filename,
+      documentPreview: preview,
+      chunks,
+    });
+
+    const vectors = await embedTexts(contextualTexts);
 
     const records: ChunkRecord[] = chunks.map((c, i) => ({
       id: `${opts.docId}-${c.index}-${randomUUID().slice(0, 8)}`,
@@ -48,6 +62,7 @@ export async function ingestDocument(opts: {
       metadata: {
         filename: opts.filename,
         page: c.page,
+        // Original chunk only — used for citations / grounded generation.
         chunkText: c.text,
         docId: opts.docId,
         userId: opts.userId,

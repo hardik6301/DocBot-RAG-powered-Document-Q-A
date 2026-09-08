@@ -46,18 +46,17 @@ Upgrades (contextual chunking, rerank, hybrid, voice, comparison) plug into this
 
 ### 3.1 Ingestion (upload)
 
-1. User uploads PDF/PPT  
-2. File stored in Supabase Storage  
-3. LangChain loads and extracts text  
-4. Text split into chunks  
-   - Chunk size: **500** tokens  
-   - Overlap: **50** tokens  
-5. Gemini Embeddings → 768-dim vectors per chunk  
+1. User uploads PDF/PPT/DOCX  
+2. File stored in Supabase Storage (or local fallback)  
+3. Text extracted and split into chunks (~500 tokens / ~50 overlap)  
+4. **Contextual prefix (Phase 8.2):** Gemini writes a short situating prefix per chunk  
+5. Embeddings use `contextualText = prefix + original chunk` (Gemini `embedding-001`, 768-dim)  
 6. Vectors upserted to Pinecone  
-   - Metadata: `{ filename, page, chunkText, docId, userId }`  
-   - Namespace: `userId`  
-7. Document row saved in Neon via Prisma  
-   - `filename`, `fileUrl`, `chunkCount`, `pageCount`, `status: "ready"`
+   - Metadata keeps **original** `chunkText` for citations/display  
+   - Namespace: user `supabaseId`  
+7. Document row saved (`chunkCount`, `pageCount`, `status: "ready"`)
+
+**Existing documents:** re-upload (or re-ingest) to pick up contextual embeddings. Chat/citations still read `chunkText` only.
 
 ### 3.2 Retrieval (chat)
 
