@@ -1,0 +1,111 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [4 0 R 6 0 R] /Count 2 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+4 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 5 0 R /Resources << /Font << /F1 3 0 R >> >> >>
+endobj
+5 0 obj
+<< /Length 882 >>
+stream
+BT
+/F1 11 Tf
+14 TL
+72 720 Td
+(Acme Corp ? Engineering Intern Onboarding Guide) Tj
+T*
+(Cohort: Summer 2026) Tj
+T*
+() Tj
+T*
+(Day 1 checklist) Tj
+T*
+(- Collect laptop and access badge from IT \(Floor 3\)) Tj
+T*
+(- Join Slack workspace: acme-eng-interns) Tj
+T*
+(- Complete security training module SEC-101 before Day 3) Tj
+T*
+() Tj
+T*
+(Mentorship) Tj
+T*
+(Each intern is assigned one mentor. Mentors meet weekly for 30 minutes.) Tj
+T*
+(Your first mentor meeting must be scheduled by Friday of Week 1.) Tj
+T*
+() Tj
+T*
+(Tools you will use) Tj
+T*
+(- GitHub for code review) Tj
+T*
+(- Linear for task tracking) Tj
+T*
+(- Notion for design docs) Tj
+T*
+(- DocBot for reading internal PDFs and asking grounded questions) Tj
+T*
+() Tj
+T*
+(Code of conduct highlight) Tj
+T*
+(Do not commit secrets \(.env, API keys\) to git.) Tj
+T*
+(Ask in #eng-help if you are blocked for more than half a day.) Tj
+ET
+endstream
+endobj
+6 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 7 0 R /Resources << /Font << /F1 3 0 R >> >> >>
+endobj
+7 0 obj
+<< /Length 526 >>
+stream
+BT
+/F1 11 Tf
+14 TL
+72 720 Td
+(Acme Corp ? Engineering Intern Onboarding Guide \(continued\)) Tj
+T*
+() Tj
+T*
+(Evaluation) Tj
+T*
+(Interns present a 10-minute demo in Week 8.) Tj
+T*
+(Performance is rated on: delivery, code quality, communication, and learning speed.) Tj
+T*
+(Return offers \(if any\) are shared within 3 weeks after the final demo.) Tj
+T*
+() Tj
+T*
+(Office hours) Tj
+T*
+(Core hours are 11:00?16:00 IST for hybrid collaboration.) Tj
+T*
+(Remote days are Tuesday and Thursday unless your team agrees otherwise.) Tj
+ET
+endstream
+endobj
+xref
+0 8
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000121 00000 n 
+0000000191 00000 n 
+0000000317 00000 n 
+0000001250 00000 n 
+0000001376 00000 n 
+trailer
+<< /Size 8 /Root 1 0 R >>
+startxref
+1953
+%%EOF

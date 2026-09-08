@@ -59,19 +59,19 @@ Phase 9       Phase 12 (targeted)
 
 **Before modifying retrieval.**
 
-- [ ] Choose 2–3 real documents  
-- [ ] Create ~15–20 questions  
-- [ ] Record expected answer  
-- [ ] Record expected source/page  
+- [x] Choose 2–3 real documents → `evals/fixtures/*.pdf`  
+- [x] Create ~15–20 questions → `evals/baseline-v1.md` (22 questions)  
+- [x] Record expected answer  
+- [x] Record expected source/page  
 - [ ] Run current DocBot  
-- [ ] Record actual answer/source  
+- [ ] Record actual answer/source → `evals/results/baseline-v1-filled.md`  
 - [ ] Mark PASS/FAIL  
 
-No formal eval harness yet — a simple benchmark sheet/file is enough.
+No formal eval harness yet — scorecard in `evals/baseline-v1.md`.
 
 **Exit criteria**
 
-- Baseline artifact exists (e.g. `evals/baseline-v1.md` or CSV) with questions, expected, actual, PASS/FAIL  
+- Baseline artifact exists (`evals/baseline-v1.md` + filled results) with questions, expected, actual, PASS/FAIL  
 - Fail patterns noted (wrong chunk, hallucination, off-topic, citation miss)
 
 ### 8.2 — Contextual chunking

@@ -1,0 +1,119 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [4 0 R 6 0 R] /Count 2 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+4 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 5 0 R /Resources << /Font << /F1 3 0 R >> >> >>
+endobj
+5 0 obj
+<< /Length 898 >>
+stream
+BT
+/F1 11 Tf
+14 TL
+72 720 Td
+(Acme Corp ? Customer Refund Policy) Tj
+T*
+(Effective date: 1 January 2026) Tj
+T*
+(Applies to: Acme Pro subscriptions and one-time credit packs) Tj
+T*
+() Tj
+T*
+(1. Overview) Tj
+T*
+(This policy explains when customers can request refunds for Acme products.) Tj
+T*
+(Refunds are processed to the original payment method within 7 business days) Tj
+T*
+(after approval.) Tj
+T*
+() Tj
+T*
+(2. Subscription refunds) Tj
+T*
+(Monthly Pro subscriptions may be refunded within 14 days of purchase if the) Tj
+T*
+(customer has used fewer than 3 document uploads in that billing period.) Tj
+T*
+(Annual Pro subscriptions may be refunded within 30 days of purchase under the) Tj
+T*
+(same usage cap \(fewer than 3 uploads\).) Tj
+T*
+() Tj
+T*
+(3. Credit packs) Tj
+T*
+(Unused credit packs are refundable within 7 days of purchase.) Tj
+T*
+(Partially used credit packs are not refundable.) Tj
+ET
+endstream
+endobj
+6 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 7 0 R /Resources << /Font << /F1 3 0 R >> >> >>
+endobj
+7 0 obj
+<< /Length 734 >>
+stream
+BT
+/F1 11 Tf
+14 TL
+72 720 Td
+(Acme Corp ? Customer Refund Policy \(continued\)) Tj
+T*
+() Tj
+T*
+(4. Non-refundable cases) Tj
+T*
+(- Charges older than the windows in sections 2 and 3) Tj
+T*
+(- Accounts suspended for abuse or Terms of Service violations) Tj
+T*
+(- Third-party marketplace fees \(if any\) already paid to app stores) Tj
+T*
+() Tj
+T*
+(5. How to request a refund) Tj
+T*
+(Email billing@acme.example with:) Tj
+T*
+(- Account email) Tj
+T*
+(- Invoice ID) Tj
+T*
+(- Reason for the request) Tj
+T*
+(Support responds within 2 business days.) Tj
+T*
+() Tj
+T*
+(6. Chargebacks) Tj
+T*
+(Customers should contact Acme Support before opening a chargeback.) Tj
+T*
+(Unexplained chargebacks may result in account suspension pending review.) Tj
+ET
+endstream
+endobj
+xref
+0 8
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000121 00000 n 
+0000000191 00000 n 
+0000000317 00000 n 
+0000001266 00000 n 
+0000001392 00000 n 
+trailer
+<< /Size 8 /Root 1 0 R >>
+startxref
+2177
+%%EOF
