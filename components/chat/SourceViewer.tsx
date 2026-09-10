@@ -67,10 +67,9 @@ function PdfPageViewer({
     void (async () => {
       try {
         const mod = await import("react-pdf");
-        mod.pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-          "pdfjs-dist/build/pdf.worker.min.mjs",
-          import.meta.url,
-        ).toString();
+        // CDN worker avoids bundling pdf.worker.min.mjs through webpack/Terser
+        // (Vercel build fails on import.meta in that ESM worker).
+        mod.pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${mod.pdfjs.version}/build/pdf.worker.min.mjs`;
         await Promise.all([
           // @ts-expect-error CSS side-effect import
           import("react-pdf/dist/esm/Page/TextLayer.css"),
