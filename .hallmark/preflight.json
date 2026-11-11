@@ -1,0 +1,32 @@
+{
+  "scanned": "2026-11-07",
+  "findings": {
+    "fonts": "Inter (UI/body) + JetBrains Mono (labels) via next/font; Design.md L27-28",
+    "palette": "Stitch tokens in tailwind.config.ts + sparse :root in app/globals.css (#faf8ff canvas, #004ac6/#2563eb primary)",
+    "motion": "framer-motion 11; fade-up/bubble-in keyframes; transform/opacity only (Design.md L38)",
+    "spacing": "Tailwind extend.spacing 4pt base (gutter/stack-*)",
+    "framework": "Next.js 14.2.21 App Router + Tailwind 3.4",
+    "design_md": "Design.md locked: workspace feel, Inter/JetBrains, blue primary, anti purple-neon",
+    "product": "DocBot RAG Document Q&A — https://thedocbot.vercel.app"
+  },
+  "preserve": [
+    "Design.md brand colors (primary blues, status emerald/amber/rose)",
+    "Content, routes, handlers, forms, RAG wiring",
+    "App shell destinations (sidebar)",
+    "framer-motion for state motion"
+  ],
+  "introduce": [
+    "Hallmark Floor compliance (tokens everywhere, overflow-x clip, focus-visible, no tracked-caps labels)",
+    "tokens.css + base.css scaffold",
+    "Composition refresh for landing + app density",
+    "sloplint sweep / before-after record"
+  ],
+  "pages": {
+    "marketing": ["/", "/auth/login", "/billing/success", "/billing/cancel", "/share/accept"],
+    "app": ["/dashboard", "/chat/[docId]", "/chat/compare", "/chat/multi", "/analytics", "/workspaces", "/history", "/settings"]
+  },
+  "conflicts": [
+    "Design.md label-caps (tracked mono) vs Hallmark Floor gate 54/67 — Floor wins unless user waives",
+    "Design.md Inter as sole UI face vs Hallmark preference to replace Inter-as-display on marketing; app scope may keep Inter"
+  ]
+}
