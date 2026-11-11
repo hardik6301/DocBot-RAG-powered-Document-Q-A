@@ -81,7 +81,7 @@ export default function VoiceStatusBar({
 
       {lastSample && (
         <details className="rounded-xl border border-outline-variant bg-white/80 px-3 py-2 text-[11px] text-on-surface-variant">
-          <summary className="cursor-pointer select-none font-mono text-label-caps text-on-surface">
+          <summary className="hm-label cursor-pointer select-none text-on-surface">
             Latency
             {totalSummary
               ? ` · P50 ${totalSummary.p50}ms · n=${totalSummary.n}`

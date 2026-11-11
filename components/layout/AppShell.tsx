@@ -67,7 +67,7 @@ function ShellInner({
   }, []);
 
   return (
-    <div className="min-h-[100dvh] bg-surface">
+    <div className="app-shell min-h-[100dvh] bg-surface">
       <AppSidebar
         open={mobileOpen}
         onClose={() => setMobileOpen(false)}

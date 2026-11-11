@@ -1,0 +1,31 @@
+[
+ {
+  "mode": "redesign",
+  "depth": "full",
+  "scope": "site",
+  "shape": "Workbench + app screen",
+  "theme": "brand",
+  "axes": "light/grotesk-sans/cool",
+  "hero": "Stage",
+  "nav": "edge-aligned",
+  "footer": "mast",
+  "imagery": "product-preview",
+  "photos": [],
+  "entry": "DocBot Hallmark full redesign",
+  "fingerprint": "docbot-brand-2026-11",
+  "sections": [
+   "Hero",
+   "HowItWorks",
+   "FinalCTA",
+   "Footer",
+   "AppShell"
+  ],
+  "signature": "cited chat preview",
+  "waived": [
+   "46a"
+  ],
+  "prompt": "RAG document Q&A workspace for signing up and asking cited questions",
+  "genre": "modern-minimal",
+  "date": "2026-11-11"
+ }
+]

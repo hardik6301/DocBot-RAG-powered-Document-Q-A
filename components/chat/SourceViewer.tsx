@@ -160,9 +160,7 @@ export default function SourceViewer({
     <aside className="flex h-full min-h-0 w-full flex-col border-l border-outline-variant bg-surface-container-lowest md:w-[28rem] lg:w-[30rem]">
       <div className="flex items-start justify-between gap-3 border-b border-outline-variant px-4 py-3">
         <div className="min-w-0">
-          <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-primary">
-            Source [{citationIndex}]
-          </p>
+          <p className="hm-label text-primary">Source [{citationIndex}]</p>
           <h2
             className="truncate text-base font-semibold text-on-surface"
             title={source.filename}
@@ -185,15 +183,13 @@ export default function SourceViewer({
 
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
         <div>
-          <p className="mb-2 font-mono text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
-            Retrieved passage
-          </p>
+          <p className="hm-label mb-2 text-on-surface-variant">Retrieved passage</p>
           <PassagePanel source={source} />
         </div>
 
         {isPdf ? (
           <div>
-            <p className="mb-2 font-mono text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
+            <p className="hm-label mb-2 text-on-surface-variant">
               Document · page {page}
             </p>
             <PdfPageViewer

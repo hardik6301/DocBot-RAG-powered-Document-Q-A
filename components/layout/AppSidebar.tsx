@@ -34,9 +34,9 @@ function NavLink({
     <Link
       href={item.href}
       onClick={onNavigate}
-      className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors ${
+      className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-focus)] ${
         active
-          ? "bg-[#E8EEFF] text-primary"
+          ? "bg-[color:var(--color-accent-soft)] text-[color:var(--color-focus)]"
           : "text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface"
       }`}
     >
@@ -60,9 +60,7 @@ function Section({
 }) {
   return (
     <div className="mb-4">
-      <p className="mb-1.5 px-3 text-[10px] font-bold uppercase tracking-[0.08em] text-outline">
-        {title}
-      </p>
+      <p className="hm-label mb-1.5 px-3">{title}</p>
       <div className="space-y-0.5">{children}</div>
     </div>
   );
@@ -122,7 +120,7 @@ export default function AppSidebar({
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-[260px] flex-col border-r border-outline-variant bg-white transition-transform duration-200 lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-[260px] flex-col border-r border-outline-variant bg-white transition-transform duration-200 motion-reduce:transition-none lg:translate-x-0 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -130,7 +128,7 @@ export default function AppSidebar({
           <Link
             href="/dashboard"
             onClick={navigate}
-            className="cursor-pointer text-[1.375rem] font-bold leading-none tracking-tight text-[#1D4ED8] transition-opacity duration-200 hover:opacity-90"
+            className="cursor-pointer text-[1.375rem] font-bold leading-none tracking-tight text-[color:var(--color-focus)] transition-opacity duration-200 hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-focus)]"
           >
             DocBot
           </Link>
@@ -140,10 +138,10 @@ export default function AppSidebar({
           <button
             type="button"
             onClick={() => setWsOpen((v) => !v)}
-            className="flex w-full items-center gap-2 rounded-full border border-[#D6E0FF] bg-[#F3F6FF] px-3 py-2 text-left text-[13px] font-medium text-on-surface transition-colors hover:bg-[#E8EEFF]"
+            className="flex w-full items-center gap-2 rounded-full border border-[color:var(--color-rule)] bg-[color:var(--color-paper-3)] px-3 py-2 text-left text-[13px] font-medium text-on-surface transition-colors duration-200 hover:bg-[color:var(--color-accent-soft)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-focus)]"
             aria-expanded={wsOpen}
           >
-            <span className="h-2 w-2 shrink-0 rounded-full bg-primary" />
+            <Icon name="workspaces" className="shrink-0 text-[18px] text-[color:var(--color-focus)]" />
             <span className="min-w-0 flex-1 truncate">{label}</span>
             <Icon name="unfold_more" className="text-[18px] text-outline" />
           </button>

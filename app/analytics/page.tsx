@@ -92,9 +92,7 @@ export default function AnalyticsPage() {
                   key={label}
                   className="rounded-xl border border-outline-variant bg-white px-4 py-5"
                 >
-                  <p className="font-mono text-label-caps text-on-surface-variant">
-                    {label}
-                  </p>
+                  <p className="hm-label text-on-surface-variant">{label}</p>
                   <p className="mt-2 text-3xl font-semibold text-on-surface">
                     {value}
                   </p>
@@ -116,12 +114,12 @@ export default function AnalyticsPage() {
                       className="flex items-start justify-between gap-4 border-b border-outline-variant/60 pb-3 last:border-0"
                     >
                       <span className="text-body-md text-on-surface">
-                        <span className="mr-2 font-mono text-label-caps text-outline">
+                        <span className="mr-2 font-mono text-[11px] text-outline tabular-nums">
                           {String(i + 1).padStart(2, "0")}
                         </span>
                         {q.text}
                       </span>
-                      <span className="shrink-0 font-mono text-label-caps text-primary">
+                      <span className="hm-label shrink-0 text-primary">
                         ×{q.count}
                       </span>
                     </li>
@@ -146,7 +144,7 @@ export default function AnalyticsPage() {
                         {d.status} · {d.chunks} chunks
                       </p>
                     </div>
-                    <p className="font-mono text-label-caps text-on-surface-variant">
+                    <p className="hm-label text-on-surface-variant">
                       {d.questions} questions
                     </p>
                   </div>

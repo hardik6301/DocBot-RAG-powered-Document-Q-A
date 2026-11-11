@@ -106,7 +106,7 @@ export default function DocumentCard({
 
   return (
     <article
-      className={`doc-card relative flex h-72 flex-col justify-between rounded-xl border bg-surface p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-soft ${
+      className={`doc-card relative flex h-72 flex-col justify-between rounded-xl border bg-surface p-5 transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-soft ${
         doc.archived
           ? "border-outline-variant/60 opacity-80"
           : "border-outline-variant"
@@ -121,12 +121,12 @@ export default function DocumentCard({
           </div>
           <div className="flex items-center gap-1">
             {!isOwner && (
-              <span className="rounded-full bg-surface-container px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
+              <span className="rounded-full bg-surface-container px-2.5 py-1 text-[11px] font-medium text-on-surface-variant">
                 {role}
               </span>
             )}
             <span
-              className={`flex items-center gap-1 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${
+              className={`flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-medium ${
                 ready
                   ? "bg-emerald-100 text-emerald-800"
                   : processing
@@ -317,7 +317,7 @@ export default function DocumentCard({
         {ready && !doc.archived ? (
           <Link
             href={`/chat/${doc.id}`}
-            className="flex items-center gap-2 font-semibold text-primary transition-all hover:gap-3"
+            className="flex items-center gap-2 font-semibold text-primary transition-colors duration-200 hover:text-surface-tint focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-focus)]"
           >
             Ask Questions
             <Icon name="arrow_forward" className="text-[18px]" />

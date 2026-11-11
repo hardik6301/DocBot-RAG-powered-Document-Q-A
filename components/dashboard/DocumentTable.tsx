@@ -39,7 +39,7 @@ export default function DocumentTable({
   return (
     <div className="overflow-x-auto rounded-xl border border-outline-variant bg-white">
       <table className="min-w-full text-left text-[13px]">
-        <thead className="border-b border-outline-variant bg-surface-container-low text-[11px] font-bold uppercase tracking-wide text-outline">
+        <thead className="border-b border-outline-variant bg-surface-container-low hm-label text-outline">
           <tr>
             <th className="px-4 py-3">Name</th>
             <th className="px-4 py-3">Type</th>
@@ -62,12 +62,12 @@ export default function DocumentTable({
                   </div>
                 )}
               </td>
-              <td className="px-4 py-3 uppercase text-on-surface-variant">
+              <td className="px-4 py-3 text-on-surface-variant">
                 {doc.fileType}
               </td>
               <td className="px-4 py-3">
                 <span
-                  className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${statusClass(
+                  className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-medium ${statusClass(
                     doc.status,
                     doc.archived,
                   )}`}

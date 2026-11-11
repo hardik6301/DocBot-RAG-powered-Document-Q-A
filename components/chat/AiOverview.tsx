@@ -19,9 +19,7 @@ export default function AiOverview({
 
   return (
     <div className="space-y-3 rounded-xl border border-primary/15 bg-primary-fixed/40 p-4 text-on-primary-fixed">
-      <p className="text-[10px] font-bold uppercase tracking-wider text-primary">
-        AI Overview
-      </p>
+      <p className="hm-label text-primary">AI overview</p>
       {summary ? (
         <div>
           <p className="mb-1 text-body-sm font-semibold text-on-surface">
@@ -61,7 +59,7 @@ export default function AiOverview({
                   type="button"
                   onClick={() => onAsk?.(q)}
                   disabled={!onAsk}
-                  className="w-full rounded-lg border border-outline-variant/80 bg-white/80 px-2.5 py-2 text-left text-[12px] leading-snug text-on-surface transition hover:border-primary/40 hover:bg-white disabled:cursor-default"
+                  className="w-full rounded-lg border border-outline-variant/80 bg-white/80 px-2.5 py-2 text-left text-[12px] leading-snug text-on-surface transition-colors duration-200 hover:border-primary/40 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-focus)] disabled:cursor-default"
                 >
                   {q}
                 </button>

@@ -44,7 +44,7 @@ export default function ManageBillingButton({
             type="button"
             onClick={() => void openPortal()}
             disabled={portalLoading}
-            className="block w-full rounded-lg bg-primary py-2 text-center text-body-sm font-semibold text-on-primary transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
+            className="block w-full rounded-lg bg-primary py-2 text-center text-body-sm font-semibold text-on-primary transition-opacity duration-200 hover:opacity-90 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-focus)] disabled:opacity-50"
           >
             {portalLoading ? "Opening…" : "Manage billing"}
           </button>
@@ -52,7 +52,7 @@ export default function ManageBillingButton({
         <button
           type="button"
           onClick={() => void onDemoToggle(false)}
-          className="block w-full rounded-lg border border-outline-variant py-2 text-center text-body-sm font-semibold text-on-surface transition-all hover:bg-surface-container-low active:scale-95"
+          className="block w-full rounded-lg border border-outline-variant py-2 text-center text-body-sm font-semibold text-on-surface transition-colors duration-200 hover:bg-surface-container-low active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-focus)]"
         >
           {stripeReady ? "Switch to Free (demo)" : "Switch to Free (demo)"}
         </button>
@@ -64,14 +64,14 @@ export default function ManageBillingButton({
   return (
     <div className="mt-4 space-y-2">
       {stripeReady ? (
-        <UpgradeButton className="block w-full rounded-lg bg-primary py-2 text-center text-body-sm font-semibold text-on-primary transition-all hover:opacity-90 active:scale-95 disabled:opacity-50">
+        <UpgradeButton className="block w-full rounded-lg bg-primary py-2 text-center text-body-sm font-semibold text-on-primary transition-opacity duration-200 hover:opacity-90 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-focus)] disabled:opacity-50">
           Upgrade with Stripe
         </UpgradeButton>
       ) : null}
       <button
         type="button"
         onClick={() => void onDemoToggle(true)}
-        className={`block w-full rounded-lg py-2 text-center text-body-sm font-semibold transition-all active:scale-95 ${
+        className={`block w-full rounded-lg py-2 text-center text-body-sm font-semibold transition-colors duration-200 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-focus)] ${
           stripeReady
             ? "border border-outline-variant text-on-surface hover:bg-surface-container-low"
             : "bg-primary text-on-primary hover:opacity-90"

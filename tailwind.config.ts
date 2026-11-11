@@ -90,7 +90,7 @@ const config: Config = {
         "body-sm": ["14px", { lineHeight: "20px", fontWeight: "400" }],
         "label-caps": [
           "12px",
-          { lineHeight: "16px", letterSpacing: "0.05em", fontWeight: "500" },
+          { lineHeight: "16px", letterSpacing: "0", fontWeight: "500" },
         ],
         "chat-bubble": ["15px", { lineHeight: "22px", fontWeight: "400" }],
       },

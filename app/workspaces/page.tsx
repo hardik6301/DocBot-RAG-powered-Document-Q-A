@@ -135,7 +135,7 @@ export default function WorkspacesPage() {
         )}
 
         <section className="mb-8 rounded-2xl border border-outline-variant bg-white p-5">
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-on-surface-variant">
+          <h2 className="mb-3 text-sm font-semibold text-on-surface-variant">
             Create workspace
           </h2>
           <div className="flex flex-col gap-2 sm:flex-row">
@@ -157,7 +157,7 @@ export default function WorkspacesPage() {
         </section>
 
         <section className="mb-8 space-y-3">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-on-surface-variant">
+          <h2 className="text-sm font-semibold text-on-surface-variant">
             Your workspaces
           </h2>
           {workspaces.length === 0 ? (
@@ -192,7 +192,7 @@ export default function WorkspacesPage() {
         {selectedWs && (
           <>
             <section className="mb-8 rounded-2xl border border-outline-variant bg-white p-5">
-              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-on-surface-variant">
+              <h2 className="mb-3 text-sm font-semibold text-on-surface-variant">
                 Invite member (must already have a DocBot account)
               </h2>
               <div className="flex flex-col gap-2 sm:flex-row">
@@ -215,7 +215,7 @@ export default function WorkspacesPage() {
             </section>
 
             <section className="mb-8 rounded-2xl border border-outline-variant bg-white p-5">
-              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-on-surface-variant">
+              <h2 className="mb-3 text-sm font-semibold text-on-surface-variant">
                 Assign your document to this workspace
               </h2>
               <div className="flex flex-col gap-2 sm:flex-row">

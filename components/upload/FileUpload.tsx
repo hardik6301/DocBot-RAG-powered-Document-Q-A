@@ -53,7 +53,7 @@ export default function FileUpload({ onUpload, uploading, disabled }: Props) {
       onClick={() => {
         if (!disabled && !uploading) inputRef.current?.click();
       }}
-      className={`upload-dashed group flex min-h-[240px] w-full cursor-pointer flex-col items-center justify-center rounded-xl p-stack-lg text-center transition-all ${
+      className={`upload-dashed group flex min-h-[240px] w-full cursor-pointer flex-col items-center justify-center rounded-xl p-stack-lg text-center transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-focus)] ${
         disabled
           ? "cursor-not-allowed opacity-60"
           : dragging

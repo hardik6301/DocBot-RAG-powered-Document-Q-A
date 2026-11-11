@@ -1,44 +1,44 @@
-# DocBot — Design System (Stitch)
+# Design: DocBot
 
-Source of truth: `stitch_docbot_rag_document_q_a/docbot_design_system/DESIGN.md`
+The locked system. Every Hallmark run reads this first and pages share it. Change it on purpose; the file is the rule.
+
+## System
+- Genre: modern-minimal
+- Shape of the first page: Workbench (Stage hero + product preview)
+- Theme: brand (DocBot Stitch blues; workspace feel)
+- Axes: light/grotesk-sans/cool · posture: Committed
 
 ## Brand
-
 Reliable, intelligent, efficient — modern corporate minimalism. Feels like a **workspace**, not a decorative marketing site.
 
-## Colors
+## Tokens
+`app/tokens.css` is the source of truth. Roles:
+```css
+:root {
+  --color-paper: #faf8ff; --color-paper-2: #ffffff; --color-paper-3: #f2f3ff;
+  --color-ink: #131b2e; --color-ink-2: #434655; --color-muted: #737686; --color-rule: #c3c6d7;
+  --color-accent: #2563eb; --color-accent-ink: #ffffff; --color-focus: #004ac6;
+  --font-display: Inter, ui-sans-serif; --font-body: Inter, ui-sans-serif; --font-outlier: JetBrains Mono;
+  --radius-card: 12px; --radius-pill: 999px; --rule-hair: 1px; --shadow-card: 0 10px 15px -3px rgba(19, 27, 46, 0.05);
+}
+```
 
-| Token | Hex | Role |
-|-------|-----|------|
-| `background` / `surface` | `#faf8ff` | App canvas |
-| `on-surface` | `#131b2e` | Primary text |
-| `on-surface-variant` | `#434655` | Secondary text |
-| `primary` | `#004ac6` | Brand / links |
-| `primary-container` | `#2563eb` | Action Blue CTAs |
-| `primary-fixed` | `#dbe1ff` | Soft blue fills |
-| `outline-variant` | `#c3c6d7` | Borders |
-| Ready | Emerald soft | Status |
-| Processing | Amber soft | Status |
-| Failed | Rose soft | Status |
-
-## Typography
-
-- **UI / body:** Inter
-- **Labels / meta:** JetBrains Mono (`label-caps`)
-- Icons: Material Symbols Outlined
-
-## Pages
-
-1. **Landing** — centered hero, CSS product preview, 3 steps, Free/Pro pricing, final CTA  
-2. **Dashboard** — sidebar stats, dashed upload, document cards  
-3. **Chat** — doc sidebar + cited chat thread  
+## Controls
+- Primary: fill accent · pill · min-height 48px (`.btn-primary`)
+- Secondary: outline on paper · same radius and height (`.btn-quiet`)
 
 ## Motion
+- Character: calm; transform/opacity only; framer-motion respects `useReducedMotion`.
 
-Short fade/rise on hero and section enter (`cubic-bezier(0.32, 0.72, 0, 1)`). Animate only `transform` / `opacity`.
+## Status
+- Ready: emerald soft · Processing: amber soft · Failed: rose soft
 
 ## Anti-patterns
+- No ezgif / canvas turntable sequences
+- No dark #121212 scrollytelling shell
+- No purple neon AI gradients
+- No tracked-caps / small-caps UI labels (Hallmark Floor)
+- No `transition: all`
 
-- No ezgif / canvas turntable sequences  
-- No dark #121212 scrollytelling shell  
-- No purple neon AI gradients  
+## Exports
+`app/tokens.css` and `app/base.css` in this project. Tailwind maps existing semantic colors in `tailwind.config.ts`; new UI should prefer CSS variables / `.btn-*` / `.hm-label`.

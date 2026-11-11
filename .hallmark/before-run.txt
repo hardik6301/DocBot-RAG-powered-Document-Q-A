@@ -1,0 +1,11 @@
+  FAIL 10a x2 components/landing/FinalCTA.tsx:25 transition-all on <Link class="rounded-2xl bg-primary px-12 py……; components/layout/Navbar.tsx:235 transition-all on <input class="w-full rounded-xl border border… | fix: Name the properties: transition-colors, transition-opacity or transition-transform
+  FAIL 19 components/landing/FinalCTA.tsx:19 buzzword "unlock" | fix: Say what the product does, in its own nouns
+  FAIL 27 components/landing/FinalCTA.tsx:25 motion utilities (a transition on a transform) with no motion-r… | fix: Add motion-reduce: fallbacks, or put the motion behind motion-safe:
+  FAIL 34 app/globals.css:29 overflow-x: hidden on body (breaks sticky) | fix: Use overflow-x: clip on both html and body, never hidden
+  FAIL 48 x43 app/globals.css:26 colour literal #faf8ff outside tokens (background-color on body); app/globals.css:27 colour literal #131b2e outside tokens (color on body) | fix: Lift the value into the token block
+  FAIL 67 x2 components/landing/Hero.tsx:212 "Next-gen RAG intelligen…" uppercase at 11px tracked 0.08em on …; components/layout/Navbar.tsx:79 "Signed in" uppercase at 11px on <p class="text-[11px] font-med… | fix: Sentence case in the body face, a step smaller, untracked: drop uppercase and the tracking-* class
+  REFLEX 26b components/layout/Navbar.tsx:1 no :disabled styling anywhere | fix: All eight states; guard: not a form control, no aria-disabled anywhere
+  WARN 29 x4 app/globals.css:51 glass panel: backdrop-filter blur over a translucent white on .…; components/landing/FinalCTA.tsx:16 blurred orb: blur-3xl on a filled absolute element on <div clas… | fix: Solid or grained surface; elevation by lightness
+sloplint: 50 FAIL, 1 REFLEX, 4 WARN across 8 file(s) and 3 URL(s), grouped by gate; every line is in .hallmark/before.txt.
+render tier not run: no puppeteer-core found locally, globally or via HALLMARK_PUPPETEER
+before: recorded 6 links, 9 fields, 6 handlers, 0 test hooks, 0 script hooks in .hallmark/before.json; --kept checks a redesign against it

@@ -1,34 +1,32 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 
 export default function FinalCTA() {
+  const reduce = useReducedMotion();
+
   return (
-    <section className="relative px-gutter py-24 text-center">
+    <section className="px-4 py-20 text-left sm:px-6 md:py-24">
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={reduce ? false : { opacity: 0, y: 16 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        transition={{ duration: 0.7, ease: [0.32, 0.72, 0, 1] }}
-        className="glass-card relative mx-auto max-w-4xl space-y-8 overflow-hidden rounded-[40px] border border-primary/20 p-10 md:p-16"
+        transition={{ duration: 0.5, ease: [0.32, 0.72, 0, 1] }}
+        className="mx-auto flex max-w-6xl flex-col gap-6 border border-[color:var(--color-rule)] bg-[color:var(--color-paper-3)] p-8 md:flex-row md:items-end md:justify-between md:p-12"
+        style={{ borderRadius: "var(--radius-card)" }}
       >
-        <div className="absolute -left-20 -top-20 h-64 w-64 rounded-full bg-primary opacity-5 blur-3xl" />
-        <div className="absolute -bottom-20 -right-20 h-64 w-64 rounded-full bg-secondary opacity-5 blur-3xl" />
-        <h2 className="relative z-10 text-headline-xl text-on-surface md:text-4xl md:font-bold">
-          Ready to unlock your documents?
-        </h2>
-        <p className="relative z-10 text-body-md text-on-surface-variant">
-          Join researchers, lawyers, and analysts using DocBot to work smarter.
-        </p>
-        <div className="relative z-10 flex justify-center">
-          <Link
-            href="/auth/login"
-            className="rounded-2xl bg-primary px-12 py-5 text-xl font-bold text-on-primary transition-all hover:-translate-y-1 hover:shadow-2xl active:scale-95"
-          >
-            Start for Free
-          </Link>
+        <div className="max-w-xl space-y-3">
+          <h2 className="text-2xl font-bold tracking-tight text-[color:var(--color-ink)] md:text-3xl">
+            Ready to ask your documents?
+          </h2>
+          <p className="text-[15px] leading-relaxed text-[color:var(--color-ink-2)] md:text-base">
+            Join researchers, lawyers, and analysts using DocBot to work smarter.
+          </p>
         </div>
+        <Link href="/auth/login" className="btn-primary shrink-0">
+          Start for Free
+        </Link>
       </motion.div>
     </section>
   );

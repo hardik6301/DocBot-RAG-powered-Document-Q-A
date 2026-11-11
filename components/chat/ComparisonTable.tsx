@@ -59,9 +59,7 @@ export default function ComparisonTable({ table, differences }: Props) {
       </div>
       {differences ? (
         <div className="rounded-xl border border-primary/15 bg-primary-fixed/30 px-4 py-3">
-          <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-primary">
-            Key Differences
-          </p>
+          <p className="hm-label mb-1 text-primary">Key differences</p>
           <p className="whitespace-pre-wrap text-body-sm leading-relaxed text-on-surface">
             {differences}
           </p>

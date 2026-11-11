@@ -178,7 +178,7 @@ export default function LibraryToolbar({
           </button>
           {filterOpen && (
             <div className="absolute right-0 z-20 mt-1 w-72 space-y-3 rounded-xl border border-outline-variant bg-white p-3 shadow-lg">
-              <label className="block text-[11px] font-bold uppercase tracking-wide text-outline">
+              <label className="hm-label block text-outline">
                 Status
                 <select
                   value={filters.status}
@@ -197,7 +197,7 @@ export default function LibraryToolbar({
                 </select>
               </label>
 
-              <label className="block text-[11px] font-bold uppercase tracking-wide text-outline">
+              <label className="hm-label block text-outline">
                 File type
                 <select
                   value={filters.fileType}
@@ -215,7 +215,7 @@ export default function LibraryToolbar({
                 </select>
               </label>
 
-              <label className="block text-[11px] font-bold uppercase tracking-wide text-outline">
+              <label className="hm-label block text-outline">
                 Folder
                 <select
                   value={filters.folder}
@@ -235,7 +235,7 @@ export default function LibraryToolbar({
               </label>
 
               {tags.length > 0 && (
-                <label className="block text-[11px] font-bold uppercase tracking-wide text-outline">
+                <label className="hm-label block text-outline">
                   Tag
                   <select
                     value={filters.tag}

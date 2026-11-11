@@ -8,21 +8,18 @@ const steps = [
     n: "01",
     title: "Upload",
     icon: "upload_file",
-    tone: "bg-[#EFF6FF] text-[#1D4ED8]",
-    body: "Drag and drop PDFs, Word docs, or structured spreadsheets. DocBot instantly OCRs and indexes every character with 99.9% accuracy.",
+    body: "Drag and drop PDFs, Word docs, or structured spreadsheets. DocBot OCRs and indexes every character with 99.9% accuracy.",
   },
   {
     n: "02",
     title: "Ask",
     icon: "chat_bubble",
-    tone: "bg-[#EEF2FF] text-[#4338CA]",
-    body: "Query your documents in plain English. From legal summaries to financial trend analysis, just ask like you're talking to an expert.",
+    body: "Query your documents in plain English. From legal summaries to financial trend analysis, ask like you are talking to an expert.",
   },
   {
     n: "03",
-    title: "Get Answers",
+    title: "Get answers",
     icon: "fact_check",
-    tone: "bg-[#F1F5F9] text-[#0F172A]",
     body: "Receive cited answers with direct links to source pages. Export summaries or chat history for your reports instantly.",
   },
 ];
@@ -32,39 +29,44 @@ export default function HowItWorks() {
 
   return (
     <section id="how" className="mx-auto max-w-6xl px-4 py-20 sm:px-6 md:py-28">
-      <div className="mb-14 space-y-3 text-center md:mb-16">
-        <h2 className="text-2xl font-bold tracking-tight text-[#0F172A] md:text-3xl">
-          Precision in Three Simple Steps
+      <div className="mb-12 max-w-2xl space-y-3 md:mb-14">
+        <h2 className="text-2xl font-bold tracking-tight text-[color:var(--color-ink)] md:text-3xl">
+          Three steps to a cited answer
         </h2>
-        <p className="mx-auto max-w-xl text-[15px] leading-relaxed text-[#64748B] md:text-base">
-          Our intelligence pipeline is designed to eliminate cognitive load and
-          maximize throughput.
+        <p className="text-[15px] leading-relaxed text-[color:var(--color-ink-2)] md:text-base">
+          Upload once, ask in plain language, and keep every answer tied to its
+          source.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-3 md:gap-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3 md:gap-8">
         {steps.map((s, i) => (
           <motion.div
             key={s.n}
-            initial={reduce ? false : { opacity: 0, y: 20 }}
+            initial={reduce ? false : { opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-10%" }}
             transition={{
-              delay: i * 0.08,
-              duration: 0.55,
+              delay: reduce ? 0 : i * 0.06,
+              duration: 0.45,
               ease: [0.32, 0.72, 0, 1],
             }}
-            className="group cursor-default rounded-2xl border border-[#E2E8F0] bg-white p-7 shadow-[0_10px_30px_-20px_rgba(15,23,42,0.18)] transition-colors duration-200 hover:border-[#93C5FD] hover:bg-[#FAFCFF] md:p-8"
+            className="border border-[color:var(--color-rule)] bg-[color:var(--color-paper-2)] p-7 md:p-8"
+            style={{ borderRadius: "var(--radius-card)" }}
           >
             <div
-              className={`mb-5 flex h-12 w-12 items-center justify-center rounded-xl ${s.tone}`}
+              className="mb-5 flex h-11 w-11 items-center justify-center bg-[color:var(--color-accent-soft)] text-[color:var(--color-focus)]"
+              style={{ borderRadius: "10px" }}
             >
-              <Icon name={s.icon} className="text-[26px]" />
+              <Icon name={s.icon} className="text-[24px]" />
             </div>
-            <h3 className="mb-3 text-lg font-semibold text-[#0F172A]">
-              {s.n}. {s.title}
+            <p className="hm-label mb-2">{s.n}</p>
+            <h3 className="mb-3 text-lg font-semibold text-[color:var(--color-ink)]">
+              {s.title}
             </h3>
-            <p className="text-[15px] leading-relaxed text-[#64748B]">{s.body}</p>
+            <p className="text-[15px] leading-relaxed text-[color:var(--color-ink-2)]">
+              {s.body}
+            </p>
           </motion.div>
         ))}
       </div>

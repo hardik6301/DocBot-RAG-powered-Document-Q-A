@@ -118,7 +118,7 @@ export default function ComparePage() {
       <main className="flex h-[calc(100dvh-4rem)] overflow-hidden">
         <aside className="hidden w-80 shrink-0 flex-col border-r border-outline-variant bg-surface-container-lowest md:flex">
           <div className="border-b border-outline-variant p-stack-md">
-            <span className="rounded bg-primary-container px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-on-primary-container">
+            <span className="rounded bg-primary-container px-2 py-0.5 hm-label text-on-primary-container">
               Compare
             </span>
             <h1 className="mt-3 text-headline-lg-mobile text-on-surface">
@@ -237,7 +237,7 @@ export default function ComparePage() {
                 />
                 {result.sources.length > 0 && (
                   <div>
-                    <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-outline">
+                    <p className="hm-label mb-2 text-outline">
                       Comparative citations
                     </p>
                     <div className="no-scrollbar -mx-2 flex gap-stack-sm overflow-x-auto px-2 pb-2">

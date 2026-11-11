@@ -139,14 +139,12 @@ export default function LoginForm() {
         Continue with Google
       </button>
       <p className="mt-2 text-center text-[11px] text-outline">
-        Google needs extra OAuth setup — use email/password first.
+        Google needs extra OAuth setup: use email/password first.
       </p>
 
       <div className="my-6 flex items-center gap-3">
         <div className="h-px flex-1 bg-outline-variant" />
-        <span className="font-mono text-[10px] uppercase tracking-wider text-outline">
-          or email
-        </span>
+        <span className="hm-label text-outline">or email</span>
         <div className="h-px flex-1 bg-outline-variant" />
       </div>
 
@@ -162,7 +160,7 @@ export default function LoginForm() {
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@company.com"
             disabled={!configured}
-            className="w-full rounded-lg border border-outline-variant bg-surface-container-low px-3 py-2.5 text-body-md outline-none transition-all focus:ring-2 focus:ring-primary disabled:opacity-60"
+            className="w-full rounded-lg border border-outline-variant bg-surface-container-low px-3 py-2.5 text-body-md outline-none transition-colors duration-200 focus:ring-2 focus:ring-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-focus)] disabled:opacity-60"
           />
         </div>
         <div>
@@ -177,13 +175,13 @@ export default function LoginForm() {
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
             disabled={!configured}
-            className="w-full rounded-lg border border-outline-variant bg-surface-container-low px-3 py-2.5 text-body-md outline-none transition-all focus:ring-2 focus:ring-primary disabled:opacity-60"
+            className="w-full rounded-lg border border-outline-variant bg-surface-container-low px-3 py-2.5 text-body-md outline-none transition-colors duration-200 focus:ring-2 focus:ring-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-focus)] disabled:opacity-60"
           />
         </div>
         <button
           type="submit"
           disabled={loading || !configured}
-          className="flex w-full items-center justify-center rounded-xl bg-primary py-3 font-semibold text-on-primary transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-60"
+          className="flex w-full items-center justify-center rounded-xl bg-primary py-3 font-semibold text-on-primary transition-opacity duration-200 hover:opacity-90 active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-focus)] disabled:opacity-60"
         >
           {loading
             ? "Please wait…"

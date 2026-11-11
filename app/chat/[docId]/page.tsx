@@ -214,8 +214,8 @@ export default function ChatPage({ params }: { params: { docId: string } }) {
         <aside className="hidden w-80 shrink-0 flex-col border-r border-outline-variant bg-surface-container-lowest md:flex">
           <div className="border-b border-outline-variant p-stack-md">
             <div className="mb-stack-sm flex items-start justify-between">
-              <span className="rounded bg-primary-container px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-on-primary-container">
-                {doc?.fileType?.toUpperCase() || "DOC"} Document
+              <span className="rounded bg-primary-container px-2 py-0.5 hm-label text-on-primary-container">
+                {doc?.fileType || "doc"} document
               </span>
               <Link
                 href="/dashboard"
@@ -235,7 +235,7 @@ export default function ChatPage({ params }: { params: { docId: string } }) {
                 : "Loading…"}
             </p>
             {doc?.accessRole && doc.accessRole !== "owner" && (
-              <p className="mt-2 text-[11px] font-semibold uppercase tracking-wider text-primary">
+              <p className="mt-2 text-[11px] font-medium text-primary">
                 Shared with you · {doc.accessRole}
               </p>
             )}
@@ -368,7 +368,7 @@ export default function ChatPage({ params }: { params: { docId: string } }) {
                         )}
                         {m.sources && m.sources.length > 0 && (
                           <div>
-                            <p className="mb-2 font-mono text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
+                            <p className="hm-label mb-2 text-on-surface-variant">
                               Sources
                             </p>
                             <div className="no-scrollbar -mx-2 flex gap-stack-sm overflow-x-auto px-2 pb-2">

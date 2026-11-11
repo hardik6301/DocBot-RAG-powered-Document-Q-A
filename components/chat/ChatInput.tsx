@@ -91,7 +91,7 @@ export default function ChatInput({
               type="button"
               disabled={busy}
               onClick={() => setValue(p.label)}
-              className="flex shrink-0 items-center gap-2 rounded-full border border-outline-variant bg-surface-container px-4 py-1.5 text-body-sm text-on-surface-variant transition-all hover:border-primary hover:bg-primary-fixed disabled:opacity-50"
+              className="flex shrink-0 items-center gap-2 rounded-full border border-outline-variant bg-surface-container px-4 py-1.5 text-body-sm text-on-surface-variant transition-colors duration-200 hover:border-primary hover:bg-primary-fixed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-focus)] disabled:opacity-50"
             >
               <Icon name={p.icon} className="text-[18px]" />
               {p.label}
@@ -101,7 +101,7 @@ export default function ChatInput({
 
         <div className="group relative">
           <div className="absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-primary to-surface-tint opacity-10 blur transition-opacity group-focus-within:opacity-30" />
-          <div className="relative flex items-end rounded-2xl border border-outline-variant bg-white p-2 shadow-xl transition-all group-focus-within:border-primary">
+          <div className="relative flex items-end rounded-2xl border border-outline-variant bg-white p-2 shadow-xl transition-colors duration-200 group-focus-within:border-primary">
             <textarea
               value={
                 speechPhase !== "idle" && interim
@@ -161,7 +161,7 @@ export default function ChatInput({
                 type="button"
                 onClick={submit}
                 disabled={busy || !value.trim()}
-                className="flex items-center justify-center rounded-xl bg-primary p-2 text-white transition-all hover:bg-surface-tint active:scale-95 disabled:opacity-50"
+                className="flex items-center justify-center rounded-xl bg-primary p-2 text-white transition-colors duration-200 hover:bg-surface-tint active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-focus)] disabled:opacity-50"
                 aria-label="Send"
               >
                 <Icon name="arrow_upward" />

@@ -174,7 +174,7 @@ function DashboardMain({
               <button
                 type="button"
                 onClick={() => setShowArchived((v) => !v)}
-                className={`rounded-full border px-4 py-2 font-mono text-label-caps transition-colors ${
+                className={`rounded-full border px-4 py-2 hm-label transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-focus)] ${
                   showArchived
                     ? "border-primary bg-primary-fixed text-on-surface"
                     : "border-outline-variant bg-surface-container-low text-on-surface-variant"
@@ -182,7 +182,7 @@ function DashboardMain({
               >
                 {showArchived ? "Viewing archived" : "Show archived"}
               </button>
-              <div className="rounded-full bg-surface-container-low px-4 py-2 font-mono text-label-caps text-on-surface-variant">
+              <div className="rounded-full bg-surface-container-low px-4 py-2 hm-label text-on-surface-variant">
                 {unlimited
                   ? `${scopedDocs.filter((d) => !d.archived).length} documents`
                   : `${usage.used}/${usage.limit} used`}
@@ -207,7 +207,7 @@ function DashboardMain({
             {uploading && (
               <ProcessingStatus
                 status="uploading"
-                message="File saved — indexing continues in the background."
+                message="File saved. Indexing continues in the background."
               />
             )}
             {scopedDocs.some((d) => d.status === "processing") &&
@@ -250,7 +250,7 @@ function DashboardMain({
               {[1, 2, 3].map((i) => (
                 <div
                   key={i}
-                  className="h-72 animate-pulse rounded-xl border border-outline-variant bg-surface-container-low"
+                  className="h-72 animate-pulse rounded-xl border border-outline-variant bg-surface-container-low motion-reduce:animate-none"
                 />
               ))}
             </div>
@@ -264,7 +264,7 @@ function DashboardMain({
                 Upload your first document to get started
               </h2>
               <p className="mt-2 text-body-md text-on-surface-variant">
-                PDF, PPT, DOC, TXT, Markdown, EPUB, or a webpage URL — then ask
+                PDF, PPT, DOC, TXT, Markdown, EPUB, or a webpage URL, then ask
                 with citations.
               </p>
             </div>
@@ -313,9 +313,7 @@ function DashboardMain({
                       name="add_circle"
                       className="mb-2 text-[48px] text-outline-variant"
                     />
-                    <p className="font-mono text-label-caps text-outline">
-                      NEW DOCUMENT
-                    </p>
+                    <p className="hm-label text-outline">New document</p>
                   </div>
                 )}
             </div>
